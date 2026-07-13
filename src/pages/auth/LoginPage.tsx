@@ -1,10 +1,8 @@
 import { useState } from "react";
-import { signIn } from "../../services/authService";
-import { useNavigate } from "react-router-dom";
+import { supabase } from "../../lib/supabase";
+import { getUserRole } from "../../services/userService";
 
 export default function LoginPage() {
-  const navigate = useNavigate();
-
   const [email, setEmail] =
     useState("");
 
@@ -12,27 +10,44 @@ export default function LoginPage() {
     useState("");
 
   async function handleLogin() {
-    const { error } = await signIn(
+  const { error } =
+    await supabase.auth.signInWithPassword({
       email,
-      password
+      password,
+    });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  const userData =
+    await getUserRole(email);
+
+  if (
+    userData?.status ===
+    "inactive"
+  ) {
+    alert(
+      "Your account is inactive. Contact administrator."
     );
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    await supabase.auth.signOut();
 
-    navigate("/");
+    return;
   }
+
+  window.location.href = "/";
+}
 
   return (
     <div className="min-h-screen flex items-center justify-center">
 
-      <div className="w-full max-w-md border p-6 rounded-lg">
+      <div className="border rounded-lg p-6 w-[400px]">
 
-        <h2 className="text-2xl font-bold mb-5">
+        <h1 className="text-2xl font-bold mb-4">
           Login
-        </h2>
+        </h1>
 
         <input
           type="email"
@@ -41,7 +56,7 @@ export default function LoginPage() {
           onChange={(e) =>
             setEmail(e.target.value)
           }
-          className="w-full border p-3 mb-3 rounded"
+          className="border p-2 w-full mb-3"
         />
 
         <input
@@ -49,16 +64,14 @@ export default function LoginPage() {
           placeholder="Password"
           value={password}
           onChange={(e) =>
-            setPassword(
-              e.target.value
-            )
+            setPassword(e.target.value)
           }
-          className="w-full border p-3 mb-3 rounded"
+          className="border p-2 w-full mb-3"
         />
 
         <button
           onClick={handleLogin}
-          className="w-full bg-green-600 text-white p-3 rounded"
+          className="bg-blue-600 text-white px-4 py-2 rounded w-full"
         >
           Login
         </button>

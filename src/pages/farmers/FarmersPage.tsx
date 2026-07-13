@@ -8,8 +8,18 @@ import {
   updateFarmer,
   deleteFarmer,
 } from "../../services/farmerService";
+import { useAuth } from "../../context/AuthContext";
 
 export default function FarmersPage() {
+  const { role } = useAuth();
+
+if (role === "viewer") {
+  return (
+    <div className="p-6">
+      Access Denied
+    </div>
+  );
+}
   const [farmers, setFarmers] =
     useState<any[]>([]);
 

@@ -13,19 +13,76 @@ import CompaniesPage from "../pages/companies/CompaniesPage";
 import AgentsPage from "../pages/agents/AgentsPage";
 import FarmersPage from "../pages/farmers/FarmersPage";
 import VisitsPage from "../pages/visits/VisitsPage";
+import { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
+import UsersPage
+from "../pages/users/UsersPage";
 
 
 export default function AppRoutes() {
+
+  const [loading, setLoading] =
+  useState(true);
+
+const [session, setSession] =
+  useState<any>(null);
+
+useEffect(() => {
+  supabase.auth
+    .getSession()
+    .then(({ data }) => {
+      setSession(data.session);
+      setLoading(false);
+    });
+
+  const {
+    data: listener,
+  } =
+    supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+      }
+    );
+
+  return () =>
+    listener.subscription.unsubscribe();
+}, []);
+
+if (loading) {
+  return <div>Loading...</div>;
+}
+
   return (
     <BrowserRouter>
       <Routes>
 
         <Route
-          path="/login"
-          element={<LoginPage />}
-        />
+  path="/login"
+  element={
+    session ? (
+      <Navigate
+        to="/"
+        replace
+      />
+    ) : (
+      <LoginPage />
+    )
+  }
+/>
 
-        <Route element={<MainLayout />}>
+        <Route
+  element={
+    session ? (
+      <MainLayout />
+    ) : (
+      <Navigate
+        to="/login"
+        replace
+      />
+    )
+  }
+>
 
           <Route
             path="/"
@@ -58,6 +115,11 @@ export default function AppRoutes() {
             path="/reports"
             element={<ReportsPage />}
           />
+
+          <Route
+          path="/users"
+          element={<UsersPage />}
+        />
 
         </Route>
 

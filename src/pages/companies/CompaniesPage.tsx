@@ -7,7 +7,22 @@ import {
   deleteCompany,
 } from "../../services/companyService";
 
+import { useAuth }
+from "../../context/AuthContext";
+
 export default function CompaniesPage() {
+  const { role } = useAuth();
+
+if (
+  role !== "super_admin" &&
+  role !== "manager"
+) {
+  return (
+    <div className="p-6">
+      Access Denied
+    </div>
+  );
+}
   const [companies, setCompanies] =
     useState<any[]>([]);
 
@@ -194,6 +209,7 @@ export default function CompaniesPage() {
   className="border p-2 w-full mb-2"
 />
 
+        {role === "super_admin" && (
         <button
           onClick={handleSave}
           className="bg-green-600 text-white px-4 py-2 rounded"
@@ -202,7 +218,7 @@ export default function CompaniesPage() {
             ? "Update Company"
             : "Add Company"}
         </button>
-
+        )}
       </div>
 
       <input
@@ -262,6 +278,7 @@ export default function CompaniesPage() {
 
                 <td className="border p-2 space-x-2">
 
+                {role === "super_admin" && (
                   <button
                     onClick={() =>
                       handleEdit(
@@ -272,7 +289,9 @@ export default function CompaniesPage() {
                   >
                     Edit
                   </button>
+                )}
 
+                {role === "super_admin" && (
                   <button
                     onClick={() =>
                       handleDelete(
@@ -283,7 +302,7 @@ export default function CompaniesPage() {
                   >
                     Delete
                   </button>
-
+                )}
                 </td>
 
               </tr>

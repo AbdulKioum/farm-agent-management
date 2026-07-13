@@ -7,8 +7,21 @@ import {
   updateAgent,
   deleteAgent,
 } from "../../services/agentService";
+import { useAuth } from "../../context/AuthContext";
 
 export default function AgentsPage() {
+  const { role } = useAuth();
+
+if (
+  role !== "super_admin" &&
+  role !== "manager"
+) {
+  return (
+    <div className="p-6">
+      Access Denied
+    </div>
+  );
+}
   const [showMap, setShowMap] =
   useState(false);
   const [agents, setAgents] = useState<any[]>([]);
