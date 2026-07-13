@@ -58,7 +58,7 @@ const [filteredCompanies,
   const [companies, setCompanies] =
     useState<any[]>([]);
 
-  const [agents, setAgents] =
+  const [, setAgents] =
     useState<any[]>([]);
 
     const [showMap, setShowMap] =
@@ -585,30 +585,6 @@ function exportCompanyExcel() {
     ),
     "companies-report.xlsx"
   );
-}
-
-function getMarkerColor(
-  companyName: string
-) {
-  switch (
-    companyName?.toLowerCase()
-  ) {
-
-    case "nourish":
-      return "blue";
-
-    case "aftab":
-      return "red";
-
-    case "paragon":
-      return "green";
-
-    case "kazi farms":
-      return "orange";
-
-    default:
-      return "gray";
-  }
 }
 
 function getFarmIcon(

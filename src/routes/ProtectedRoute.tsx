@@ -6,9 +6,9 @@ export default function ProtectedRoute({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = useAuth();
+ const { role } = useAuth();
 
-  if (!user) {
+  if (!role) {
     return <Navigate to="/login" />;
   }
 

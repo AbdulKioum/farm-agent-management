@@ -18,8 +18,8 @@ export interface Agent {
 
   focus_item: string;
 
-  latitude: string;
-  longitude: string;
+  latitude: number | null;
+  longitude: number | null;
 
   status: string;
 }

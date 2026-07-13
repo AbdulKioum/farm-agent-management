@@ -1,5 +1,4 @@
 import { supabase } from "../lib/supabase";
-import type { Company } from "../types/company";
 
 export async function getCompanies() {
   const { data, error } = await supabase

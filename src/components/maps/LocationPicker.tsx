@@ -23,7 +23,7 @@ function LocationMarker({
     useState<any>(null);
 
   useMapEvents({
-    click(e) {
+    click(e: any) {
       setPosition(
         e.latlng
       );
