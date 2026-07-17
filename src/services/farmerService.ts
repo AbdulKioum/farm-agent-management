@@ -4,13 +4,14 @@ import type { Farmer } from "../types/farmer";
 export async function getFarmers() {
   const { data, error } = await supabase
     .from("farmers")
-    .select(
-      `
-      *,
-      companies(company_name),
-      agents(agent_name)
-    `
-    )
+    .select(`
+  *,
+  companies(
+    company_name,
+    logo_url
+  ),
+  agents(agent_name)
+`)
     .order("id", {
       ascending: false,
     });

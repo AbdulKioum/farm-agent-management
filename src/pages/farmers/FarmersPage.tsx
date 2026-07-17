@@ -11,6 +11,143 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+} from "react-leaflet";
+
+import L from "leaflet";
+
+import "leaflet/dist/leaflet.css";
+delete (L.Icon.Default.prototype as any)
+  ._getIconUrl;
+
+  import { useMap } from "react-leaflet";
+  import {
+  Tooltip,
+} from "react-leaflet";
+
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+
+  iconUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+
+  shadowUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
+
+
+function getFarmIcon(
+  farmType: string
+) {
+  switch (
+    farmType?.toLowerCase()
+  ) {
+
+    case "layer":
+      return "🥚";
+
+    case "broiler":
+      return "🐔";
+
+    case "sonali":
+      return "🐓";
+
+    case "cattle":
+      return "🐄";
+
+    case "fish":
+      return "🐟";
+
+    default:
+      return "📍";
+  }
+}
+
+function createFarmMarker(
+  logoUrl: string,
+  farmType: string,
+  farmerName: string
+) {
+
+  const icon =
+    getFarmIcon(
+      farmType
+    );
+
+  return L.divIcon({
+
+    html: `
+      <div
+        style="
+          display:flex;
+          flex-direction:column;
+          align-items:center;
+        "
+      >
+
+        <div
+          style="
+            background:white;
+            padding:1px 5px;
+            border-radius:5px;
+            font-size:9px;
+            font-weight:600;
+            white-space:nowrap;
+            box-shadow:0 1px 3px rgba(0,0,0,.20);
+            margin-bottom:-6px;
+            z-index:999;
+            position:relative;
+          "
+        >
+          ${farmerName}
+        </div>
+
+       <div
+        style="
+          display:flex;
+          align-items:flex-end;
+          margin-top:-2px;
+        "
+      >
+
+          <img
+            src="${logoUrl}"
+            style="
+              width:45px;
+              height:29px;
+              object-fit:contain;
+            "
+          />
+
+          <div
+          style="
+            margin-left:-8px;
+            margin-bottom:-1px;
+            font-size:16px;
+            z-index:999;
+          "
+        >
+          ${icon}
+        </div>
+
+        </div>
+
+      </div>
+    `,
+
+    className: "",
+
+    iconSize: [80, 55],
+
+  });
+}
+
 
 export default function FarmersPage() {
   const { role } = useAuth();
@@ -100,12 +237,34 @@ const [upazilas, setUpazilas] =
 const [unions, setUnions] =
   useState<any[]>([]);
 
+  const [showFarmerMap,
+setShowFarmerMap] =
+useState(false);
+
+
   const [showSummary,
 setShowSummary] =
 useState(false);
 const [farmTypeFilter,
 setFarmTypeFilter] =
 useState("");
+
+const [myLocationMode,
+setMyLocationMode] =
+useState(false);
+
+const [
+  selectedFarmerPosition,
+  setSelectedFarmerPosition,
+] = useState<
+  [number, number] | null
+>(null);
+
+const [myPosition,
+setMyPosition] =
+useState<
+  [number, number] | null
+>(null);
 
 
   function clearFilters() {
@@ -268,6 +427,91 @@ setDistricts(
 
     loadData();
   }
+
+
+  function FitBounds({
+  positions,
+}: {
+  positions: [number, number][];
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (positions.length > 0) {
+      map.fitBounds(
+        positions,
+        {
+          padding: [50, 50],
+        }
+      );
+    }
+  }, [positions, map]);
+
+  return null;
+}
+
+function FlyToFarmer({
+  position,
+}: {
+  position:
+    | [number, number]
+    | null;
+}) {
+
+  const map =
+    useMap();
+
+  useEffect(() => {
+
+    if (
+      position
+    ) {
+
+      map.flyTo(
+        position,
+        17
+      );
+
+    }
+
+  }, [
+    position,
+    map,
+  ]);
+
+  return null;
+}
+
+
+function FlyToLocation({
+  position,
+}: {
+  position:
+    | [number, number]
+    | null;
+}) {
+
+  const map = useMap();
+
+  useEffect(() => {
+
+    if (position) {
+
+      map.flyTo(
+        position,
+        15
+      );
+
+    }
+
+  }, [
+    position,
+    map,
+  ]);
+
+  return null;
+}
+
 
   function exportFarmersExcel() {
 
@@ -707,7 +951,7 @@ const companySummary =
   )?.company_name ||
   "All Companies";
 
-  
+
 
   function exportFarmerSummaryExcel() {
 
@@ -818,7 +1062,95 @@ const companySummary =
 }
   
 
+const filteredFarmers =
+  farmers.filter((f) => {
 
+    const matchSearch =
+      f.farmer_name
+        ?.toLowerCase()
+        .includes(
+          search.toLowerCase()
+        );
+
+    const matchCompany =
+      companyFilter === "" ||
+      String(f.company_id) === companyFilter;
+
+    const matchAgent =
+      agentFilter === "" ||
+      String(f.agent_id) === agentFilter;
+
+    const matchDistrict =
+      districtFilter === "" ||
+      f.district === districtFilter;
+
+    const matchUpazila =
+      upazilaFilter === "" ||
+      f.upazila === upazilaFilter;
+
+    const matchUnion =
+      unionFilter === "" ||
+      f.union_name === unionFilter;
+
+    const matchFarmType =
+      farmTypeFilter === "" ||
+      f.farm_type === farmTypeFilter;
+
+    return (
+      matchSearch &&
+      matchCompany &&
+      matchAgent &&
+      matchDistrict &&
+      matchUpazila &&
+      matchUnion &&
+      matchFarmType
+    );
+  });
+
+
+
+
+
+  const nearestFarmers =
+  myPosition
+    ? [...filteredFarmers]
+        .filter(
+          (f) =>
+            f.latitude &&
+            f.longitude
+        )
+        .map((f) => ({
+
+          ...f,
+
+          distance:
+            Math.sqrt(
+              Math.pow(
+                Number(
+                  f.latitude
+                ) -
+                  myPosition[0],
+                2
+              ) +
+                Math.pow(
+                  Number(
+                    f.longitude
+                  ) -
+                    myPosition[1],
+                  2
+                )
+            ),
+
+        }))
+        .sort(
+          (a, b) =>
+            a.distance -
+            b.distance
+        )
+        .slice(0, 10)
+    : [];
+
+    
 
   return (
     <div className="p-4">
@@ -1458,9 +1790,327 @@ const companySummary =
   Export Farmers Excel
 </button>
 
+<button
+  onClick={() => {
 
+    if (!showFarmerMap) {
+
+      setMyLocationMode(
+        false
+      );
+
+      setMyPosition(
+        null
+      );
+
+      setSelectedFarmerPosition(
+        null
+      );
+
+    }
+
+    setShowFarmerMap(
+      !showFarmerMap
+    );
+
+  }}
+  className="bg-blue-600 text-white px-4 py-2 rounded"
+>
+  {showFarmerMap
+    ? "Hide Map"
+    : "Show Map"}
+</button>
+
+<button
+  onClick={() => {
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+
+        setMyPosition([
+          position.coords.latitude,
+          position.coords.longitude,
+        ]);
+
+        setMyLocationMode(true);
+      }
+    );
+
+  }}
+  className="bg-green-600 text-white px-4 py-2 rounded"
+>
+  📍 My Location
+</button>
 
 </div>
+
+
+{showFarmerMap && (
+
+<div className="bg-white rounded-xl shadow-lg p-4 mb-4">
+
+  <h3 className="text-lg font-semibold mb-3">
+    Farmer Map
+  </h3>
+
+  <MapContainer
+
+    center={[
+      24.7471,
+      90.4203,
+    ]}
+    zoom={8}
+    style={{
+      height: "600px",
+      width: "100%",
+    }}
+  >
+
+    <TileLayer
+      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    />
+
+    <FlyToFarmer
+  position={
+    selectedFarmerPosition
+  }
+/>
+
+{myLocationMode &&
+  myPosition && (
+
+  <FlyToLocation
+    position={
+      myPosition
+    }
+  />
+
+)}
+
+    {myPosition && (
+
+  <Marker
+    position={
+      myPosition
+    }
+  >
+
+    <Popup>
+      📍 My Location
+    </Popup>
+
+  </Marker>
+
+)}
+
+
+<FitBounds
+  positions={
+    myLocationMode
+      ? []
+      : filteredFarmers
+          .filter(
+            (f) =>
+              f.latitude &&
+              f.longitude
+          )
+          .map((f) => [
+            Number(
+              f.latitude
+            ),
+            Number(
+              f.longitude
+            ),
+          ])
+  }
+/>
+
+
+
+
+    {filteredFarmers
+      .filter(
+        (f) =>
+          f.latitude &&
+          f.longitude
+      )
+      .map(
+        (farmer) => (
+
+         <Marker
+          key={farmer.id}
+          position={[
+            Number(farmer.latitude),
+            Number(farmer.longitude),
+          ]}
+          icon={createFarmMarker(
+            farmer.companies?.logo_url,
+            farmer.farm_type,
+            farmer.farmer_name
+          )}
+        >
+
+            <Popup maxWidth={350}>
+
+            <div
+              style={{
+                minWidth: "250px",
+                lineHeight: "1.7",
+              }}
+            >
+
+              <img
+                  src={
+                    farmer.companies
+                      ?.logo_url
+                  }
+                  style={{
+                    width: "70px",
+                    maxHeight: "58px",
+                    objectFit: "contain",
+                    marginBottom: "8px",
+                  }}
+                />
+
+              <h3
+                style={{
+                  fontWeight: "bold",
+                  fontSize: "16px",
+                  marginBottom: "8px",
+                }}
+              >
+                {getFarmIcon(
+                  farmer.farm_type
+                )}{" "}
+                {farmer.farmer_name}
+              </h3>
+
+              <hr />
+
+              <div>
+                <b>Company:</b>{" "}
+                {farmer.companies
+                  ?.company_name}
+              </div>
+
+              <div>
+                <b>Agent:</b>{" "}
+                {farmer.agents
+                  ?.agent_name}
+              </div>
+
+              <div>
+                <b>Mobile:</b>{" "}
+                {farmer.mobile}
+              </div>
+
+              <div>
+                <b>Farm Type:</b>{" "}
+                {farmer.farm_type}
+              </div>
+
+              <div>
+                <b>Farm Size:</b>{" "}
+                {farmer.farm_size}
+              </div>
+
+              <div>
+                <b>Village:</b>{" "}
+                {farmer.village}
+              </div>
+
+              <div>
+                <b>Union:</b>{" "}
+                {farmer.union_name}
+              </div>
+
+              <div>
+                <b>Upazila:</b>{" "}
+                {farmer.upazila}
+              </div>
+
+              <div>
+                <b>District:</b>{" "}
+                {farmer.district}
+              </div>
+
+              <div>
+                <b>Status:</b>{" "}
+                {farmer.status}
+              </div>
+
+              <div>
+                <b>Remarks:</b>{" "}
+                {farmer.remarks || "-"}
+              </div>
+
+            </div>
+
+          </Popup>
+
+          </Marker>
+
+        )
+      )}
+
+  </MapContainer>
+
+
+
+  {myLocationMode && (
+
+<div className="mt-4 bg-white p-4 rounded-xl shadow">
+
+  <h3 className="text-lg font-semibold mb-3">
+    📍 Nearest Farmers
+  </h3>
+
+
+  {nearestFarmers.map(
+    (farmer) => (
+
+      <div
+        key={farmer.id}
+        className="
+          border-b
+          py-2
+          cursor-pointer
+          hover:bg-gray-100
+        "
+
+        onClick={() =>
+  setSelectedFarmerPosition(
+    [
+      Number(
+        farmer.latitude
+      ),
+      Number(
+        farmer.longitude
+      ),
+    ]
+  )
+}
+      >
+
+        {getFarmIcon(
+          farmer.farm_type
+        )}{" "}
+
+        {farmer.farmer_name}
+
+      </div>
+
+    )
+  )}
+
+</div>
+
+)}
+
+</div>
+
+)}
+
 
 
 <div className="overflow-x-auto">
@@ -1776,6 +2426,8 @@ setFilteredAgents(
       </table>
 
       </div>
+
+      
 
 {selectedFarmer && (
   <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
