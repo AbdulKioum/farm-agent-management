@@ -7,7 +7,6 @@ import {
   updateAgent,
   deleteAgent,
 } from "../../services/agentService";
-import { useAuth } from "../../context/AuthContext";
 import {
   MapContainer,
   TileLayer,
