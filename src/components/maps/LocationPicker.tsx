@@ -5,15 +5,25 @@ import {
   useMapEvents,
 } from "react-leaflet";
 
-import {
-  useState,
-} from "react";
+import { useState } from "react";
 
 type Props = {
   onSelect: (
     lat: number,
     lng: number
   ) => void;
+
+  center?: [
+    number,
+    number
+  ];
+
+  zoom?: number;
+
+  selectedPosition?: [
+    number,
+    number
+  ] | null;
 };
 
 function LocationMarker({
@@ -42,16 +52,29 @@ function LocationMarker({
   ) : null;
 }
 
+function ExistingMarker({
+  position,
+}: {
+  position: [number, number];
+}) {
+  return (
+    <Marker position={position} />
+  );
+}
+
 export default function LocationPicker({
   onSelect,
+  center = [
+    23.8103,
+    90.4125,
+  ],
+  zoom = 8,
+  selectedPosition,
 }: Props) {
   return (
     <MapContainer
-      center={[
-        23.8103,
-        90.4125,
-      ]}
-      zoom={8}
+      center={center}
+      zoom={zoom}
       style={{
         height: "450px",
         width: "100%",
@@ -60,6 +83,14 @@ export default function LocationPicker({
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+
+      {selectedPosition && (
+  <ExistingMarker
+    position={
+      selectedPosition
+    }
+  />
+)}
 
       <LocationMarker
         onSelect={

@@ -6,7 +6,7 @@ export default function Sidebar({
   role: string;
 }) {
   return (
-    <aside className="w-64 bg-white border-r min-h-screen">
+    <aside className="w-50 shrink-0 bg-white border-r min-h-screen">
       <div className="p-5 font-bold text-xl">
         FAMS
       </div>

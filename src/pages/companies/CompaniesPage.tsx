@@ -42,6 +42,9 @@ if (
     status: "Active",
   });
 
+  const [showForm, setShowForm] =
+  useState(false);
+
   async function loadCompanies() {
     const data =
       await getCompanies();
@@ -133,6 +136,21 @@ if (
         Companies
       </h1>
 
+      <div className="mb-4">
+  <button
+    onClick={() =>
+      setShowForm(!showForm)
+    }
+    className="bg-blue-600 text-white px-4 py-2 rounded"
+  >
+    {showForm
+      ? "Close Form"
+      : "+ Add Company"}
+  </button>
+</div>
+
+{showForm && (
+
       <div className="border p-4 rounded mb-4">
 
         <input
@@ -220,6 +238,7 @@ if (
         </button>
         )}
       </div>
+)}
 
       <input
         placeholder="Search Company..."
