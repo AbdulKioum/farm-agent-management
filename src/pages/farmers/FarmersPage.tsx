@@ -25,9 +25,6 @@ delete (L.Icon.Default.prototype as any)
   ._getIconUrl;
 
   import { useMap } from "react-leaflet";
-  import {
-  Tooltip,
-} from "react-leaflet";
 
 
 L.Icon.Default.mergeOptions({
