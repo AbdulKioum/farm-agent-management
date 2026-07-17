@@ -708,6 +708,114 @@ const companySummary =
   "All Companies";
 
   
+
+  function exportFarmerSummaryExcel() {
+
+  const exportData =
+    companySummary.map(
+      (row: any) => ({
+
+        Company:
+          row.company,
+
+        Total_Farmers:
+          row.totalFarmers,
+
+        Total_Farm_Size:
+          row.totalFarmSize,
+
+        Broiler_Farmers:
+          row.broilerFarmers,
+
+        Broiler_Size:
+          row.broilerSize,
+
+        Layer_Farmers:
+          row.layerFarmers,
+
+        Layer_Size:
+          row.layerSize,
+
+        Sonali_Farmers:
+          row.sonaliFarmers,
+
+        Sonali_Size:
+          row.sonaliSize,
+
+        Cattle_Farmers:
+          row.cattleFarmers,
+
+        Cattle_Size:
+          row.cattleSize,
+
+        Fish_Farmers:
+          row.fishFarmers,
+
+        Fish_Size:
+          row.fishSize,
+
+      })
+    );
+
+  const worksheet =
+    XLSX.utils.json_to_sheet(
+      exportData
+    );
+
+  const workbook =
+    XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(
+    workbook,
+    worksheet,
+    "Farmer Summary"
+  );
+
+  const excelBuffer =
+    XLSX.write(
+      workbook,
+      {
+        bookType: "xlsx",
+        type: "array",
+      }
+    );
+
+  const file =
+    new Blob(
+      [excelBuffer],
+      {
+        type:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      }
+    );
+
+  const today =
+    new Date()
+      .toISOString()
+      .split("T")[0];
+
+  const fileName =
+    `Farmer_Summary_${
+      districtFilter ||
+      "AllDistricts"
+    }_${
+      upazilaFilter ||
+      "AllUpazilas"
+    }_${
+      unionFilter ||
+      "AllUnions"
+    }_${
+      farmTypeFilter ||
+      "AllTypes"
+    }_${
+      today
+    }.xlsx`;
+
+  saveAs(
+    file,
+    fileName
+  );
+}
   
 
 
@@ -1849,6 +1957,13 @@ setFilteredAgents(
     <h2 className="text-xl font-bold mb-2">
   Farmer Summary of {selectedCompanyName}
 </h2>
+
+<button
+  onClick={exportFarmerSummaryExcel}
+  className="bg-green-600 text-white px-4 py-2 rounded mt-2 mb-4"
+>
+  Export Farmer Summary
+</button>
 
 <p>
   Union: {unionFilter || "All Unions"}
