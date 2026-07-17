@@ -113,7 +113,6 @@ function FitBounds({
 
 
 export default function AgentsPage() {
-  const { role } = useAuth();
 
   const [showForm, setShowForm] =
   useState(false);
