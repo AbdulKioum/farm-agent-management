@@ -1669,31 +1669,6 @@ useEffect(() => {
 
 
 
-
-  <select
-    value={agentFilter}
-    onChange={(e) =>
-      setAgentFilter(
-        e.target.value
-      )
-    }
-    className="border p-2 rounded"
-  >
-    <option value="">
-      All Agents
-    </option>
-
-    {agents.map((a) => (
-      <option
-        key={a.id}
-        value={a.id}
-      >
-        {a.agent_name}
-      </option>
-    ))}
-  </select>
-
-
   <select
     value={districtFilter}
     onChange={(e) => {
@@ -1834,6 +1809,29 @@ useEffect(() => {
     ))}
   </select>
 
+
+<select
+    value={agentFilter}
+    onChange={(e) =>
+      setAgentFilter(
+        e.target.value
+      )
+    }
+    className="border p-2 rounded"
+  >
+    <option value="">
+      All Agents
+    </option>
+
+    {agents.map((a) => (
+      <option
+        key={a.id}
+        value={a.id}
+      >
+        {a.agent_name}
+      </option>
+    ))}
+  </select>
 
 
   <button
