@@ -1,4 +1,8 @@
 import { useState } from "react";
+import {
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { getUserRole } from "../../services/userService";
 
@@ -8,6 +12,17 @@ export default function LoginPage() {
 
   const [password, setPassword] =
     useState("");
+
+    const navigate =
+  useNavigate();
+
+const location =
+  useLocation();
+
+const from =
+  (
+    location.state as any
+  )?.from?.pathname || "/";
 
   async function handleLogin() {
   const { error } =
@@ -37,7 +52,13 @@ export default function LoginPage() {
     return;
   }
 
-  window.location.href = "/";
+  
+  navigate(
+  from,
+  {
+    replace: true,
+  }
+);
 }
 
   return (

@@ -60,14 +60,7 @@ if (loading) {
         <Route
   path="/login"
   element={
-    session ? (
-      <Navigate
-        to="/"
-        replace
-      />
-    ) : (
-      <LoginPage />
-    )
+    <LoginPage />
   }
 />
 

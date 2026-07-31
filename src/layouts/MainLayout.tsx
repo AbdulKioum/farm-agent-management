@@ -8,6 +8,7 @@ import Navbar from "../components/common/Navbar";
 import {
   AuthContext,
 } from "../context/AuthContext";
+import { Navigate } from "react-router-dom";
 
 export default function MainLayout() {
   const [role, setRole] =
@@ -16,38 +17,89 @@ export default function MainLayout() {
   const [userName, setUserName] =
     useState("");
 
+    const [loading, setLoading] =
+  useState(true);
+
+const [loggedIn, setLoggedIn] =
+  useState(false);
+
   useEffect(() => {
     loadUser();
   }, []);
 
   async function loadUser() {
-    const {
-      data: { user },
-    } =
-      await supabase.auth.getUser();
 
-    if (!user?.email) return;
+  const {
+    data: { session },
+  } =
+    await supabase.auth.getSession();
 
-    const userData =
-      await getUserRole(
-        user.email
-      );
-      
-      console.log("Auth User:", user);
+  if (!session) {
 
-console.log("Email:",
-  user?.email);
+    setLoggedIn(false);
+    setLoading(false);
 
-console.log("User Data:",
-  userData);
+    return;
 
-    if (userData) {
-      setRole(userData.role);
-      setUserName(
-        userData.full_name
-      );
-    }
   }
+
+  setLoggedIn(true);
+
+  const {
+    data: { user },
+  } =
+    await supabase.auth.getUser();
+
+  if (!user?.email) {
+
+    setLoading(false);
+
+    return;
+
+  }
+
+  const userData =
+    await getUserRole(
+      user.email
+    );
+
+  if (userData) {
+
+    setRole(
+      userData.role
+    );
+
+    setUserName(
+      userData.full_name
+    );
+
+  }
+
+  setLoading(false);
+
+}
+
+if (loading) {
+
+  return (
+    <div className="p-10">
+      Loading...
+    </div>
+  );
+
+}
+
+if (!loggedIn) {
+
+  return (
+    <Navigate
+      to="/login"
+      replace
+    />
+  );
+
+}
+
 
   return (
   <AuthContext.Provider
