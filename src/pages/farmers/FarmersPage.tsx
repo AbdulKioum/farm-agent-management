@@ -13,7 +13,6 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import {
   MapContainer,
-  TileLayer,
   Marker,
   Popup,
 } from "react-leaflet";
@@ -25,6 +24,14 @@ delete (L.Icon.Default.prototype as any)
   ._getIconUrl;
 
   import { useMap } from "react-leaflet";
+  import {
+
+createFarmMarker,
+
+getFarmIcon,
+
+} from "../../utils/mapMarkers";
+import MapLayers from "../../components/maps/MapLayers";
 
 
 L.Icon.Default.mergeOptions({
@@ -37,113 +44,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl:
     "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
-
-
-function getFarmIcon(
-  farmType: string
-) {
-  switch (
-    farmType?.toLowerCase()
-  ) {
-
-    case "layer":
-      return "🥚";
-
-    case "broiler":
-      return "🐔";
-
-    case "sonali":
-      return "🐓";
-
-    case "cattle":
-      return "🐄";
-
-    case "fish":
-      return "🐟";
-
-    default:
-      return "📍";
-  }
-}
-
-function createFarmMarker(
-  logoUrl: string,
-  farmType: string,
-  farmerName: string
-) {
-
-  const icon =
-    getFarmIcon(
-      farmType
-    );
-
-  return L.divIcon({
-
-    html: `
-      <div
-        style="
-          display:flex;
-          flex-direction:column;
-          align-items:center;
-        "
-      >
-
-        <div
-          style="
-            background:white;
-            padding:1px 5px;
-            border-radius:5px;
-            font-size:9px;
-            font-weight:600;
-            white-space:nowrap;
-            box-shadow:0 1px 3px rgba(0,0,0,.20);
-            margin-bottom:-6px;
-            z-index:999;
-            position:relative;
-          "
-        >
-          ${farmerName}
-        </div>
-
-       <div
-        style="
-          display:flex;
-          align-items:flex-end;
-          margin-top:-2px;
-        "
-      >
-
-          <img
-            src="${logoUrl}"
-            style="
-              width:45px;
-              height:29px;
-              object-fit:contain;
-            "
-          />
-
-          <div
-          style="
-            margin-left:-8px;
-            margin-bottom:-1px;
-            font-size:16px;
-            z-index:999;
-          "
-        >
-          ${icon}
-        </div>
-
-        </div>
-
-      </div>
-    `,
-
-    className: "",
-
-    iconSize: [80, 55],
-
-  });
-}
 
 
 export default function FarmersPage() {
@@ -268,6 +168,7 @@ const [filterUpazilas, setFilterUpazilas] =
 
 const [filterUnions, setFilterUnions] =
   useState<any[]>([]);
+
 
 
   function clearFilters() {
@@ -1222,6 +1123,11 @@ useEffect(() => {
 
 }, [upazilaFilter, filterUpazilas]);
 
+
+
+
+
+
     
 
   return (
@@ -1661,7 +1567,7 @@ useEffect(() => {
             e.target.value
           )
         }
-        className="border p-2 w-full mb-4"
+        className="border px-2 py-0.5 text-xs w-full mb-4"
       />
 
       <div className="flex flex-wrap gap-2 items-center mb-4">
@@ -1679,7 +1585,7 @@ useEffect(() => {
   setUnionFilter("");
 
 }}
-    className="border p-2 rounded"
+    className="border px-2 py-0.5 text-xs rounded"
   >
     <option value="">
       All Districts
@@ -1709,7 +1615,7 @@ useEffect(() => {
   setUnionFilter("");
 
 }}
-    className="border p-2 rounded"
+    className="border px-2 py-0.5 text-xs rounded"
   >
     <option value="">
       All Upazilas
@@ -1733,7 +1639,7 @@ useEffect(() => {
         e.target.value
       )
     }
-    className="border p-2 rounded"
+    className="border px-2 py-0.5 text-xs rounded"
   >
     <option value="">
       All Unions
@@ -1757,7 +1663,7 @@ useEffect(() => {
       e.target.value
     )
   }
-  className="border p-2 rounded"
+  className="border px-2 py-0.5 text-xs rounded"
 >
   <option value="">
     All Farm Types
@@ -1793,7 +1699,7 @@ useEffect(() => {
         e.target.value
       )
     }
-    className="border p-2 rounded"
+    className="border px-2 py-0.5 text-xs rounded"
   >
     <option value="">
       All Companies
@@ -1817,7 +1723,7 @@ useEffect(() => {
         e.target.value
       )
     }
-    className="border p-2 rounded"
+    className="border px-2 py-0.5 text-xs rounded"
   >
     <option value="">
       All Agents
@@ -1937,9 +1843,7 @@ useEffect(() => {
     }}
   >
 
-    <TileLayer
-      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-    />
+    <MapLayers />
 
     <FlyToFarmer
   position={
@@ -2190,47 +2094,47 @@ useEffect(() => {
         <thead>
 
           <tr>
-            <th className="border p-2">
+            <th className="border px-2 py-0.5 text-xs">
               Company
             </th>
 
-            <th className="border p-2">
+            <th className="border px-2 py-0.5 text-xs">
               Agent
             </th>
 
-            <th className="border p-2">
+            <th className="border px-2 py-0.5 text-xs">
               Farmer
             </th>
 
-            <th className="border p-2">
+            <th className="border px-2 py-0.5 text-xs">
               Mobile
             </th>
 
-            <th className="border p-2">
+            <th className="border px-2 py-0.5 text-xs">
               Farm Type
             </th>
 
-            <th className="border p-2">
+            <th className="border px-2 py-0.5 text-xs">
               Village
             </th>
 
-            <th className="border p-2">
+            <th className="border px-2 py-0.5 text-xs">
               Union
             </th>
 
-            <th className="border p-2">
+            <th className="border px-2 py-0.5 text-xs">
               Upazila
             </th>
 
-            <th className="border p-2">
+            <th className="border px-2 py-0.5 text-xs">
               Farm Size
             </th>
 
-            <th className="border p-2">
+            <th className="border px-2 py-0.5 text-xs">
               Status
             </th>
 
-            <th className="border p-2">
+            <th className="border px-2 py-0.5 text-xs">
               Actions
             </th>
           </tr>
@@ -2324,7 +2228,7 @@ useEffect(() => {
               <tr
                 key={farmer.id}
               >
-                <td className="border p-2">
+                <td className="border px-2 py-0.5 text-xs">
                   {
                     farmer
                       .companies
@@ -2332,7 +2236,7 @@ useEffect(() => {
                   }
                 </td>
 
-                <td className="border p-2">
+                <td className="border px-2 py-0.5 text-xs">
                   {
                     farmer
                       .agents
@@ -2340,55 +2244,55 @@ useEffect(() => {
                   }
                 </td>
 
-                <td className="border p-2">
+                <td className="border px-2 py-0.5 text-xs">
                   {
                     farmer.farmer_name
                   }
                 </td>
 
-                <td className="border p-2">
+                <td className="border px-2 py-0.5 text-xs">
                   {
                     farmer.mobile
                   }
                 </td>
 
-                <td className="border p-2">
+                <td className="border px-2 py-0.5 text-xs">
                   {
                     farmer.farm_type
                   }
                 </td>
 
-                <td className="border p-2">
+                <td className="border px-2 py-0.5 text-xs">
                   {
                     farmer.village
                   }
                 </td>
                   
-                  <td className="border p-2">
+                  <td className="border px-2 py-0.5 text-xs">
                   {
                     farmer.union_name
                   }
                 </td>
 
-                <td className="border p-2">
+                <td className="border px-2 py-0.5 text-xs">
                   {
                     farmer.upazila
                   }
                 </td>
 
-                <td className="border p-2">
+                <td className="border px-2 py-0.5 text-xs">
                   {
                     farmer.farm_size
                   }
                 </td>
 
-                <td className="border p-2">
+                <td className="border px-2 py-0.5 text-xs">
                   {
                     farmer.status
                   }
                 </td>
 
-                <td className="border p-2">
+                <td className="border px-2 py-0.5 text-xs">
 
   <button
     onClick={() =>
@@ -2704,55 +2608,55 @@ setFilteredAgents(
 
 <tr className="bg-gray-100">
 
-<th className="border p-2">
+<th className="border px-2 py-0.5 text-xs">
   Company
 </th>
 
-<th className="border p-2">
+<th className="border px-2 py-0.5 text-xs">
   Total Farmers
 </th>
 
-<th className="border p-2">
+<th className="border px-2 py-0.5 text-xs">
   Total Farm Size
 </th>
 
-<th className="border p-2">
+<th className="border px-2 py-0.5 text-xs">
   Broiler Farmers
 </th>
 
-<th className="border p-2">
+<th className="border px-2 py-0.5 text-xs">
   Broiler Size
 </th>
 
-<th className="border p-2">
+<th className="border px-2 py-0.5 text-xs">
   Layer Farmers
 </th>
 
-<th className="border p-2">
+<th className="border px-2 py-0.5 text-xs">
   Layer Size
 </th>
 
-<th className="border p-2">
+<th className="border px-2 py-0.5 text-xs">
   Sonali Farmers
 </th>
 
-<th className="border p-2">
+<th className="border px-2 py-0.5 text-xs">
   Sonali Size
 </th>
 
-<th className="border p-2">
+<th className="border px-2 py-0.5 text-xs">
   Cattle Farmers
 </th>
 
-<th className="border p-2">
+<th className="border px-2 py-0.5 text-xs">
   Cattle Size
 </th>
 
-<th className="border p-2">
+<th className="border px-2 py-0.5 text-xs">
   Fish Farmers
 </th>
 
-<th className="border p-2">
+<th className="border px-2 py-0.5 text-xs">
   Fish Size
 </th>
 
@@ -2767,55 +2671,55 @@ setFilteredAgents(
 
 <tr key={row.company}>
 
-<td className="border p-2">
+<td className="border px-2 py-0.5 text-xs">
   {row.company}
 </td>
 
-<td className="border p-2">
+<td className="border px-2 py-0.5 text-xs">
   {row.totalFarmers}
 </td>
 
-<td className="border p-2">
+<td className="border px-2 py-0.5 text-xs">
   {row.totalFarmSize}
 </td>
 
-<td className="border p-2">
+<td className="border px-2 py-0.5 text-xs">
   {row.broilerFarmers}
 </td>
 
-<td className="border p-2">
+<td className="border px-2 py-0.5 text-xs">
   {row.broilerSize}
 </td>
 
-<td className="border p-2">
+<td className="border px-2 py-0.5 text-xs">
   {row.layerFarmers}
 </td>
 
-<td className="border p-2">
+<td className="border px-2 py-0.5 text-xs">
   {row.layerSize}
 </td>
 
-<td className="border p-2">
+<td className="border px-2 py-0.5 text-xs">
   {row.sonaliFarmers}
 </td>
 
-<td className="border p-2">
+<td className="border px-2 py-0.5 text-xs">
   {row.sonaliSize}
 </td>
 
-<td className="border p-2">
+<td className="border px-2 py-0.5 text-xs">
   {row.cattleFarmers}
 </td>
 
-<td className="border p-2">
+<td className="border px-2 py-0.5 text-xs">
   {row.cattleSize}
 </td>
 
-<td className="border p-2">
+<td className="border px-2 py-0.5 text-xs">
   {row.fishFarmers}
 </td>
 
-<td className="border p-2">
+<td className="border px-2 py-0.5 text-xs">
   {row.fishSize}
 </td>
 
@@ -2853,25 +2757,78 @@ setFilteredAgents(
         </button>
 
       </div>
+<LocationPicker
+  center={
+    selectedUpazila
+      ? [
+          Number(selectedUpazila.lat),
+          Number(selectedUpazila.lon),
+        ]
+      : selectedDistrict
+      ? [
+          Number(selectedDistrict.lat),
+          Number(selectedDistrict.lon),
+        ]
+      : [23.6850, 90.3563]
+  }
 
-      <LocationPicker
-        onSelect={(
-          lat,
-          lng
-        ) => {
-          setForm({
-            ...form,
-            latitude:
-              lat.toString(),
-            longitude:
-              lng.toString(),
-          });
+  zoom={
+    selectedUpazila
+      ? 13
+      : selectedDistrict
+      ? 11
+      : 7
+  }
 
-          setShowMap(
-            false
-          );
-        }}
-      />
+  selectedPosition={
+    form.latitude &&
+    form.longitude
+      ? [
+          Number(form.latitude),
+          Number(form.longitude),
+        ]
+      : null
+  }
+
+  onSelect={(lat, lng) => {
+
+    setForm({
+      ...form,
+      latitude: lat.toString(),
+      longitude: lng.toString(),
+    });
+
+    setShowMap(false);
+
+  }}
+
+  markers={
+  <>
+    {farmers
+      .filter(
+        (f) =>
+          f.latitude &&
+          f.longitude
+      )
+      .map((farmer) => (
+        <Marker
+          key={farmer.id}
+          position={[
+            Number(farmer.latitude),
+            Number(farmer.longitude),
+          ]}
+          icon={createFarmMarker(
+            farmer.companies?.logo_url,
+            farmer.farm_type,
+            farmer.farmer_name
+          )}
+        />
+      ))}
+  </>
+}
+
+
+/>
 
     </div>
 

@@ -9,12 +9,10 @@ import {
 } from "../../services/agentService";
 import {
   MapContainer,
-  TileLayer,
   Marker,
   Popup,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import L from "leaflet";
 import { useMap } from "react-leaflet";
 import {
   FaMapMarkerAlt,
@@ -23,52 +21,10 @@ import {
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { getBazars } from "../../services/bazarService";
+import {createAgentMarker} from "../../utils/mapMarkers";
+import MapLayers from "../../components/maps/MapLayers";
 
 
-function createAgentMarker(
-  logoUrl: string,
-  agentName: string
-) {
-  return L.divIcon({
-    html: `
-      <div
-        style="
-          display:flex;
-          flex-direction:column;
-          align-items:center;
-        "
-      >
-
-        <div
-          style="
-            font-size:9px;
-            font-weight:bold;
-            color:black;
-            background:white;
-            padding:1px 4px;
-            margin-bottom:-3px;
-            line-height:1;
-            white-space:nowrap;
-            box-shadow:0 0 3px rgba(0,0,0,.3);
-          "
-        >
-          ${agentName}
-        </div>
-
-        <img
-          src="${logoUrl}"
-          style="
-            width:45px;
-            margin-top:0px;
-            object-fit:contain;
-          "
-        />
-      </div>
-    `,
-    className: "",
-    iconSize: [80, 75],
-  });
-}
 
 function RecenterMap({
   position,
@@ -877,6 +833,12 @@ useEffect(() => {
       form.district
   );
 
+  const selectedUpazila =
+  upazilas.find(
+    (u: any) =>
+      u.name === form.upazila
+  );
+
   const selectedUnion =
   unions.find(
     (u: any) =>
@@ -1618,7 +1580,7 @@ useEffect(() => {
 
 }}
 
-  className="border p-2 rounded ml-2"
+  className="border px-2 py-0.5 text-xs rounded ml-2"
 >
   <option value="">
     All Districts
@@ -1656,7 +1618,7 @@ useEffect(() => {
 
 }}
 
-  className="border p-2 rounded ml-2"
+  className="border px-2 py-0.5 text-xs rounded ml-2"
 >
   <option value="">
     All Upazilas
@@ -1683,7 +1645,7 @@ useEffect(() => {
     setUnionFilter(e.target.value);
     setBazarFilter("");
   }}
-  className="border p-2 rounded ml-2"
+  className="border px-2 py-0.5 text-xs rounded ml-2"
 >
   <option value="">
     All Unions
@@ -1708,7 +1670,7 @@ useEffect(() => {
       e.target.value
     )
   }
-  className="border p-2 rounded"
+  className="border px-2 py-0.5 text-xs rounded"
 >
 
   <option value="">
@@ -1734,7 +1696,7 @@ useEffect(() => {
       e.target.value
     )
   }
-  className="border p-2 rounded">
+  className="border px-2 py-0.5 text-xs rounded">
   <option value="">
     All Companies
   </option>
@@ -1830,9 +1792,7 @@ useEffect(() => {
     width: "100%",
   }}
 >
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+      <MapLayers />
 
       {!myLocationMode && (
   <FitBounds
@@ -2065,38 +2025,38 @@ useEffect(() => {
 
 
       <div className="overflow-x-auto">
-       <table className="w-max border">
+       <table className="w-max border text-xs">
         <thead>
           <tr>
-            <th className="border p-2 whitespace-nowrap">
+            <th className="border px-2 py-0.5 text-xs whitespace-nowrap">
               Company
             </th>
 
-            <th className="border p-2 whitespace-nowrap">
+            <th className="border px-2 py-0.5 text-xs whitespace-nowrap">
               Agent
             </th>
 
-            <th className="border p-2 whitespace-nowrap">
+            <th className="border px-2 py-0.5 text-xs whitespace-nowrap">
               Mobile
             </th>
 
-          <th className="border p-2 whitespace-nowrap">
+          <th className="border px-2 py-0.5 text-xs whitespace-nowrap">
               Bazar
             </th>
 
-          <th className="border p-2 whitespace-nowrap">
+          <th className="border px-2 py-0.5 text-xs whitespace-nowrap">
               Union
             </th>
 
-            <th className="border p-2 whitespace-nowrap">
+            <th className="border px-2 py-0.5 text-xs whitespace-nowrap">
               Upazila
             </th>
 
-            <th className="border p-2 whitespace-nowrap">
+            <th className="border px-2 py-0.5 text-xs whitespace-nowrap">
               Monthly Sale
             </th>
 
-            <th className="border p-2 whitespace-nowrap">
+            <th className="border px-2 py-0.5 text-xs whitespace-nowrap">
               Actions
             </th>
           </tr>
@@ -2108,7 +2068,7 @@ useEffect(() => {
           
           {sortedAgents.map((agent) => (
               <tr key={agent.id}>
-                <td className="border p-2">
+                <td className="border px-2 py-0.5 text-xs">
                   {
                     agent
                       .companies
@@ -2116,34 +2076,34 @@ useEffect(() => {
                   }
                 </td>
 
-                <td className="border p-2">
+                <td className="border px-2 py-0.5 text-xs">
                   {
                     agent.agent_name
                   }
                 </td>
 
-                <td className="border p-2">
+                <td className="border px-2 py-0.5 text-xs">
                   {agent.mobile}
                 </td>
 
-                  <td className="border p-2">
+                  <td className="border px-2 py-0.5 text-xs">
                   {agent.bazar}
                 </td>
 
-                <td className="border p-2">
+                <td className="border px-2 py-0.5 text-xs">
                   {agent.union_name}
                 </td>
 
-                <td className="border p-2">
+                <td className="border px-2 py-0.5 text-xs">
                   {agent.upazila}
                 </td>
                   
-                  <td className="border p-2">
+                  <td className="border px-2 py-0.5 text-xs">
                   {agent.monthly_sale}
                 </td>
 
 
-                <td className="border p-2">
+                <td className="border px-2 py-0.5 text-xs">
 
                     <button
                     onClick={() => {
@@ -2408,15 +2368,15 @@ useEffect(() => {
 
         <thead>
           <tr>
-            <th className="border p-2">
+            <th className="border px-2 py-0.5 text-xs">
               Company
             </th>
 
-            <th className="border p-2">
+            <th className="border px-2 py-0.5 text-xs">
               Agents
             </th>
 
-            <th className="border p-2">
+            <th className="border px-2 py-0.5 text-xs">
               Sale
             </th>
           </tr>
@@ -2428,15 +2388,15 @@ useEffect(() => {
             (c: any) => (
               <tr key={c.name}>
 
-                <td className="border p-2">
+                <td className="border px-2 py-0.5 text-xs">
                   {c.name}
                 </td>
 
-                <td className="border p-2">
+                <td className="border px-2 py-0.5 text-xs">
                   {c.agents}
                 </td>
 
-                <td className="border p-2">
+                <td className="border px-2 py-0.5 text-xs">
                   {c.sale}
                 </td>
 
@@ -2479,22 +2439,25 @@ useEffect(() => {
 
       <LocationPicker
   center={
-    selectedDistrict
+  selectedUpazila
+    ? [
+        Number(selectedUpazila.lat),
+        Number(selectedUpazila.lon),
+      ]
+    : selectedDistrict
       ? [
-          Number(
-            selectedDistrict.lat
-          ),
-          Number(
-            selectedDistrict.lon
-          ),
+          Number(selectedDistrict.lat),
+          Number(selectedDistrict.lon),
         ]
       : [23.6850, 90.3563]
-  }
+}
   zoom={
-    selectedDistrict
+  selectedUpazila
+    ? 13
+    : selectedDistrict
       ? 11
       : 7
-  }
+}
 
   selectedPosition={
     form.latitude &&
@@ -2521,6 +2484,32 @@ useEffect(() => {
 
     setShowAgentMap(false);
   }}
+
+  markers={
+  <>
+    {agents
+      .filter(
+        (a) =>
+          a.latitude &&
+          a.longitude
+      )
+      .map((agent) => (
+        <Marker
+          key={agent.id}
+          position={[
+            Number(agent.latitude),
+            Number(agent.longitude),
+          ]}
+          icon={createAgentMarker(
+            agent.companies?.logo_url,
+            agent.agent_name
+          )}
+        />
+      ))}
+  </>
+}
+
+
 />
 
     </div>

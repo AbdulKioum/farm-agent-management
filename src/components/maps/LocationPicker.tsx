@@ -1,11 +1,11 @@
 import {
   MapContainer,
-  TileLayer,
   Marker,
   useMapEvents,
 } from "react-leaflet";
 
 import { useState } from "react";
+import MapLayers from "./MapLayers";
 
 type Props = {
   onSelect: (
@@ -24,7 +24,10 @@ type Props = {
     number,
     number
   ] | null;
+
+  markers?: React.ReactNode;
 };
+
 
 function LocationMarker({
   onSelect,
@@ -64,13 +67,13 @@ function ExistingMarker({
 
 export default function LocationPicker({
   onSelect,
-  center = [
-    23.8103,
-    90.4125,
-  ],
+  center = [23.8103, 90.4125],
   zoom = 8,
   selectedPosition,
+  markers,
 }: Props) {
+
+
   return (
     <MapContainer
       center={center}
@@ -80,9 +83,13 @@ export default function LocationPicker({
         width: "100%",
       }}
     >
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+      const mapKey =
+  import.meta.env
+    .VITE_MAPTILER_KEY;
+
+<MapLayers />
+
+      {markers}
 
       {selectedPosition && (
   <ExistingMarker
