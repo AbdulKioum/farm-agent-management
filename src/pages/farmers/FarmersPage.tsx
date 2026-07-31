@@ -263,6 +263,12 @@ useState<
   [number, number] | null
 >(null);
 
+const [filterUpazilas, setFilterUpazilas] =
+  useState<any[]>([]);
+
+const [filterUnions, setFilterUnions] =
+  useState<any[]>([]);
+
 
   function clearFilters() {
   setCompanyFilter("");
@@ -1147,6 +1153,75 @@ const filteredFarmers =
         .slice(0, 10)
     : [];
 
+
+    useEffect(() => {
+
+  if (!districtFilter) {
+
+    setFilterUpazilas([]);
+    setFilterUnions([]);
+    return;
+
+  }
+
+  async function loadFilterUpazilas() {
+
+    const district =
+      districts.find(
+        (d) => d.name === districtFilter
+      );
+
+    if (!district) return;
+
+    const { data } =
+      await supabase
+        .from("upazilas")
+        .select("*")
+        .eq("district_id", district.id)
+        .order("name");
+
+    setFilterUpazilas(data || []);
+
+  }
+
+  loadFilterUpazilas();
+
+}, [districtFilter, districts]);
+
+
+useEffect(() => {
+
+  if (!upazilaFilter) {
+
+    setFilterUnions([]);
+    return;
+
+  }
+
+  async function loadFilterUnions() {
+
+    const upazila =
+      filterUpazilas.find(
+        (u) => u.name === upazilaFilter
+      );
+
+    if (!upazila) return;
+
+    const { data } =
+      await supabase
+        .from("unions")
+        .select("*")
+        .eq("upazila_id", upazila.id)
+        .order("name");
+
+    setFilterUnions(data || []);
+
+  }
+
+  loadFilterUnions();
+
+}, [upazilaFilter, filterUpazilas]);
+
     
 
   return (
@@ -1589,31 +1664,10 @@ const filteredFarmers =
         className="border p-2 w-full mb-4"
       />
 
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className="flex flex-wrap gap-2 items-center mb-4">
 
 
-  <select
-    value={companyFilter}
-    onChange={(e) =>
-      setCompanyFilter(
-        e.target.value
-      )
-    }
-    className="border p-2 rounded"
-  >
-    <option value="">
-      All Companies
-    </option>
 
-    {companies.map((c) => (
-      <option
-        key={c.id}
-        value={c.id}
-      >
-        {c.company_name}
-      </option>
-    ))}
-  </select>
 
 
   <select
@@ -1642,11 +1696,14 @@ const filteredFarmers =
 
   <select
     value={districtFilter}
-    onChange={(e) =>
-      setDistrictFilter(
-        e.target.value
-      )
-    }
+    onChange={(e) => {
+
+  setDistrictFilter(e.target.value);
+
+  setUpazilaFilter("");
+  setUnionFilter("");
+
+}}
     className="border p-2 rounded"
   >
     <option value="">
@@ -1670,29 +1727,27 @@ const filteredFarmers =
 
   <select
     value={upazilaFilter}
-    onChange={(e) =>
-      setUpazilaFilter(
-        e.target.value
-      )
-    }
+    onChange={(e) => {
+
+  setUpazilaFilter(e.target.value);
+
+  setUnionFilter("");
+
+}}
     className="border p-2 rounded"
   >
     <option value="">
       All Upazilas
     </option>
 
-    {[...new Set(
-      farmers.map(
-        (f) => f.upazila
-      )
-    )].map((upazila) => (
-      <option
-        key={upazila}
-        value={upazila}
-      >
-        {upazila}
-      </option>
-    ))}
+    {filterUpazilas.map((u: any) => (
+  <option
+    key={u.id}
+    value={u.name}
+  >
+    {u.name}
+  </option>
+))}
   </select>
 
 
@@ -1709,18 +1764,14 @@ const filteredFarmers =
       All Unions
     </option>
 
-    {[...new Set(
-      farmers.map(
-        (f) => f.union_name
-      )
-    )].map((union) => (
-      <option
-        key={union}
-        value={union}
-      >
-        {union}
-      </option>
-    ))}
+    {filterUnions.map((u: any) => (
+  <option
+    key={u.id}
+    value={u.name}
+  >
+    {u.name}
+  </option>
+))}
   </select>
 
 
@@ -1760,6 +1811,30 @@ const filteredFarmers =
 </select>
 
 
+<select
+    value={companyFilter}
+    onChange={(e) =>
+      setCompanyFilter(
+        e.target.value
+      )
+    }
+    className="border p-2 rounded"
+  >
+    <option value="">
+      All Companies
+    </option>
+
+    {companies.map((c) => (
+      <option
+        key={c.id}
+        value={c.id}
+      >
+        {c.company_name}
+      </option>
+    ))}
+  </select>
+
+
 
   <button
   onClick={clearFilters}
@@ -1767,8 +1842,9 @@ const filteredFarmers =
 >
   Clear Filters
 </button>
+</div>
 
-
+<div className="flex flex-wrap gap-2 items-center mb-4">
 <button
   onClick={() =>
     setShowSummary(true)

@@ -191,6 +191,15 @@ const [unions, setUnions] =
   const [myLocationMode, setMyLocationMode] =
   useState(false);
 
+  const [filterUpazilas, setFilterUpazilas] =
+  useState<any[]>([]);
+
+const [filterUnions, setFilterUnions] =
+  useState<any[]>([]);
+
+const [filterBazars, setFilterBazars] =
+  useState<any[]>([]);
+
 
 
 useEffect(() => {
@@ -554,6 +563,130 @@ useEffect(() => {
     loadData();
   }, []);
 
+
+
+  useEffect(() => {
+
+  if (!districtFilter) {
+
+    setFilterUpazilas([]);
+    setFilterUnions([]);
+    setFilterBazars([]);
+
+    return;
+
+  }
+
+  async function loadFilterUpazilas() {
+
+    const district =
+      districts.find(
+        (d) =>
+          d.name === districtFilter
+      );
+
+    if (!district) return;
+
+    const { data } =
+      await supabase
+        .from("upazilas")
+        .select("*")
+        .eq(
+          "district_id",
+          district.id
+        )
+        .order("name");
+
+    setFilterUpazilas(data || []);
+
+  }
+
+  loadFilterUpazilas();
+
+}, [districtFilter, districts]);
+
+
+useEffect(() => {
+
+  if (!upazilaFilter) {
+
+    setFilterUnions([]);
+    setFilterBazars([]);
+
+    return;
+
+  }
+
+  async function loadFilterUnions() {
+
+    const upazila =
+      filterUpazilas.find(
+        (u) =>
+          u.name === upazilaFilter
+      );
+
+    if (!upazila) return;
+
+    const { data } =
+      await supabase
+        .from("unions")
+        .select("*")
+        .eq(
+          "upazila_id",
+          upazila.id
+        )
+        .order("name");
+
+    setFilterUnions(data || []);
+
+  }
+
+  loadFilterUnions();
+
+}, [upazilaFilter, filterUpazilas]);
+
+
+useEffect(() => {
+
+  if (!unionFilter) {
+
+    setFilterBazars([]);
+
+    return;
+
+  }
+
+  async function loadFilterBazars() {
+
+    const union =
+      filterUnions.find(
+        (u) =>
+          u.name === unionFilter
+      );
+
+    if (!union) return;
+
+    const { data } =
+      await supabase
+        .from("bazars")
+        .select("*")
+        .eq(
+          "union_id",
+          union.id
+        )
+        .order("name");
+
+    setFilterBazars(data || []);
+
+  }
+
+  loadFilterBazars();
+
+}, [unionFilter, filterUnions]);
+
+
+
+
   async function handleSave() {
   try {
     if (
@@ -812,28 +945,6 @@ const filteredBazars =
 
 
 
-
-
- const selectedFilterUnion =
-  unions.find(
-    (u: any) =>
-      u.name ===
-      unionFilter
-  );
-
-const filteredBazarList =
-  bazars.filter(
-    (b: any) =>
-      unionFilter === ""
-        ? true
-        : Number(
-            b.union_id
-          ) ===
-          Number(
-            selectedFilterUnion?.id
-          )
-  );
-
   
   const sortedAgents =
   [...filteredAgents].sort(
@@ -991,6 +1102,8 @@ useEffect(() => {
   upazilaFilter,
   unionFilter,
 ]);
+
+
 
   return (
     <div className="p-4">
@@ -1487,35 +1600,24 @@ useEffect(() => {
 
 <div className="flex flex-wrap gap-2 items-center mb-4">
 
-<select
-  value={companyFilter}
-  onChange={(e) =>
-    setCompanyFilter(
-      e.target.value
-    )
-  }
-  className="border p-2 rounded">
-  <option value="">
-    All Companies
-  </option>
 
-  {companies.map((c) => (
-    <option
-      key={c.id}
-      value={c.id}
-    >
-      {c.company_name}
-    </option>
-  ))}
-</select>
 
 <select
   value={districtFilter}
-  onChange={(e) =>
-    setDistrictFilter(
-      e.target.value
-    )
-  }
+  onChange={(e) => {
+
+  setDistrictFilter(
+    e.target.value
+  );
+
+  setUpazilaFilter("");
+
+  setUnionFilter("");
+
+  setBazarFilter("");
+
+}}
+
   className="border p-2 rounded ml-2"
 >
   <option value="">
@@ -1538,45 +1640,48 @@ useEffect(() => {
   ))}
 </select>
 
+
+
 <select
   value={upazilaFilter}
-  onChange={(e) =>
-    setUpazilaFilter(
-      e.target.value
-    )
-  }
+  onChange={(e) => {
+
+  setUpazilaFilter(
+    e.target.value
+  );
+
+  setUnionFilter("");
+
+  setBazarFilter("");
+
+}}
+
   className="border p-2 rounded ml-2"
 >
   <option value="">
     All Upazilas
   </option>
 
-  {[
-    ...new Set(
-      agents.map(
-        (a) => a.upazila
-      )
-    ),
-  ].map((upazila) => (
-    <option
-      key={upazila}
-      value={upazila}
-    >
-      {upazila}
-    </option>
-  ))}
+  {filterUpazilas.map((u: any) => (
+  <option
+    key={u.id}
+    value={u.name}
+  >
+    {u.name}
+  </option>
+))}
 </select>
+
+
+
+
+
 
 <select
   value={unionFilter}
   onChange={(e) => {
-
-    setUnionFilter(
-      e.target.value
-    );
-
+    setUnionFilter(e.target.value);
     setBazarFilter("");
-
   }}
   className="border p-2 rounded ml-2"
 >
@@ -1584,21 +1689,17 @@ useEffect(() => {
     All Unions
   </option>
 
-  {[
-    ...new Set(
-      agents.map(
-        (a) => a.union_name
-      )
-    ),
-  ].map((union) => (
-    <option
-      key={union}
-      value={union}
-    >
-      {union}
-    </option>
-  ))}
+  {filterUnions.map((u: any) => (
+  <option
+    key={u.id}
+    value={u.name}
+  >
+    {u.name}
+  </option>
+))}
 </select>
+
+
 
 <select
   value={bazarFilter}
@@ -1614,18 +1715,42 @@ useEffect(() => {
     All Bazar
   </option>
 
-  {filteredBazarList.map(
-    (b: any) => (
-      <option
-        key={b.id}
-        value={b.name}
-      >
-        {b.name}
-      </option>
-    )
-  )}
+  {filterBazars.map((b: any) => (
+  <option
+    key={b.id}
+    value={b.name}
+  >
+    {b.name}
+  </option>
+))}
 
 </select>
+
+
+<select
+  value={companyFilter}
+  onChange={(e) =>
+    setCompanyFilter(
+      e.target.value
+    )
+  }
+  className="border p-2 rounded">
+  <option value="">
+    All Companies
+  </option>
+
+  {companies.map((c) => (
+    <option
+      key={c.id}
+      value={c.id}
+    >
+      {c.company_name}
+    </option>
+  ))}
+</select>
+
+
+
 
 <button
   onClick={clearFilters}
@@ -1639,6 +1764,14 @@ useEffect(() => {
 <div className="flex items-center gap-3 mb-4">
 
 
+<button
+  onClick={() =>
+    setShowSummary(true)
+  }
+  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded"
+>
+  Summary
+</button>
 
 <button
   onClick={
@@ -1650,14 +1783,7 @@ useEffect(() => {
 </button>
 
 
-   <button
-  onClick={() =>
-    setShowSummary(true)
-  }
-  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded"
->
-  Summary
-</button>
+   
 
   <button
     onClick={() =>
