@@ -23,6 +23,9 @@ export default function MainLayout() {
 const [loggedIn, setLoggedIn] =
   useState(false);
 
+const [sidebarOpen, setSidebarOpen] =
+  useState(true);
+
   useEffect(() => {
     loadUser();
   }, []);
@@ -108,16 +111,22 @@ if (!loggedIn) {
       userName,
     }}
   >
-    <div className="flex">
-      <Sidebar role={role} />
+    <div className="flex h-screen overflow-hidden">
+      <Sidebar
+  role={role}
+  sidebarOpen={sidebarOpen}
+  setSidebarOpen={setSidebarOpen}
+/>
 
-      <div className="flex-1">
+      <div className="flex-1 min-w-0 flex flex-col">
         <Navbar
           role={role}
           userName={userName}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
         />
 
-        <main className="p-6">
+        <main className="flex-1 overflow-auto bg-gray-50 p-6">
           <Outlet />
         </main>
       </div>
