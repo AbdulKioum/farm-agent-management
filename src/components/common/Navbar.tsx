@@ -12,8 +12,6 @@ import { supabase } from "../../lib/supabase";
 export default function Navbar({
   role,
   userName,
-  sidebarOpen,
-  setSidebarOpen,
 }: {
   role: string;
   userName: string;
