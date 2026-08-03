@@ -85,9 +85,99 @@ const [sidebarOpen, setSidebarOpen] =
 if (loading) {
 
   return (
-    <div className="p-10">
-      Loading...
+
+    <div
+      className="
+      min-h-screen
+      flex
+      items-center
+      justify-center
+      bg-gradient-to-br
+      from-green-50
+      via-white
+      to-green-100
+      "
+    >
+
+      <div className="w-full max-w-md text-center">
+
+        <div
+          className="
+          text-7xl
+          animate-pulse
+          mb-5
+          "
+        >
+          🌿
+        </div>
+
+        <h1
+          className="
+          text-5xl
+          font-extrabold
+          tracking-wide
+          text-emerald-700
+          "
+        >
+          FAMS
+        </h1>
+
+        <p
+          className="
+          mt-3
+          text-gray-600
+          text-lg
+          "
+        >
+          Farm & Agent Management System
+        </p>
+
+        <p
+          className="
+          mt-8
+          text-sm
+          text-gray-500
+          "
+        >
+          Preparing your workspace...
+        </p>
+
+        <div
+          className="
+          mt-5
+          h-2
+          rounded-full
+          bg-gray-200
+          overflow-hidden
+          "
+        >
+
+          <div
+            className="
+            h-full
+            w-1/2
+            bg-emerald-600
+            animate-pulse
+            rounded-full
+            "
+          />
+
+        </div>
+
+        <p
+          className="
+          mt-8
+          text-xs
+          text-gray-400
+          "
+        >
+          Version 1.0
+        </p>
+
+      </div>
+
     </div>
+
   );
 
 }
