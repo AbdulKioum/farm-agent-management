@@ -32,6 +32,7 @@ getFarmIcon,
 
 } from "../../utils/mapMarkers";
 import MapLayers from "../../components/maps/MapLayers";
+import { useRef } from "react";
 
 
 L.Icon.Default.mergeOptions({
@@ -156,6 +157,10 @@ const [
 ] = useState<
   [number, number] | null
 >(null);
+
+const farmerMarkerRefs = useRef<
+  Record<number, L.Marker | null>
+>({});
 
 const [myPosition,
 setMyPosition] =
@@ -333,6 +338,25 @@ setDistricts(
   }
 
 
+  function RecenterMap({
+  position,
+}: {
+  position: [number, number];
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    map.flyTo(position, 17, {
+      animate: true,
+      duration: 1.5,
+    });
+  }, [position, map]);
+
+  return null;
+}
+
+
+
   function FitBounds({
   positions,
 }: {
@@ -354,67 +378,6 @@ setDistricts(
   return null;
 }
 
-function FlyToFarmer({
-  position,
-}: {
-  position:
-    | [number, number]
-    | null;
-}) {
-
-  const map =
-    useMap();
-
-  useEffect(() => {
-
-    if (
-      position
-    ) {
-
-      map.flyTo(
-        position,
-        17
-      );
-
-    }
-
-  }, [
-    position,
-    map,
-  ]);
-
-  return null;
-}
-
-
-function FlyToLocation({
-  position,
-}: {
-  position:
-    | [number, number]
-    | null;
-}) {
-
-  const map = useMap();
-
-  useEffect(() => {
-
-    if (position) {
-
-      map.flyTo(
-        position,
-        15
-      );
-
-    }
-
-  }, [
-    position,
-    map,
-  ]);
-
-  return null;
-}
 
 
   function exportFarmersExcel() {
@@ -1806,8 +1769,10 @@ useEffect(() => {
         ]);
 
         setMyLocationMode(true);
+        setSelectedFarmerPosition(null);
       }
     );
+
 
   }}
   className="bg-green-600 text-white px-4 py-2 rounded"
@@ -1834,43 +1799,79 @@ useEffect(() => {
     ]}
     zoom={8}
     style={{
-      height: "600px",
+      height: "500px",
       width: "100%",
     }}
   >
 
     <MapLayers />
 
-    <FlyToFarmer
-  position={
-    selectedFarmerPosition
-  }
-/>
-
-{myLocationMode &&
-  myPosition && (
-
-  <FlyToLocation
-    position={
-      myPosition
-    }
+    {selectedFarmerPosition && (
+  <RecenterMap
+    position={selectedFarmerPosition}
   />
-
 )}
+
 
     {myPosition && (
 
-  <Marker
-    position={
-      myPosition
-    }
-  >
+  <Marker position={myPosition}>
 
-    <Popup>
-      📍 My Location
-    </Popup>
+  <Popup minWidth={260}>
 
-  </Marker>
+    <div className="space-y-2">
+
+      <h3 className="font-bold text-base">
+        📍 Nearest Farmers
+      </h3>
+
+      {nearestFarmers.length === 0 ? (
+
+        <p className="text-sm text-gray-500">
+          No nearby farmers found.
+        </p>
+
+      ) : (
+
+        nearestFarmers.map((farmer) => (
+
+          <div
+            key={farmer.id}
+            className="
+              cursor-pointer
+              rounded
+              p-2
+              hover:bg-gray-100
+            "
+          onClick={() => {
+
+  setSelectedFarmerPosition([
+    Number(farmer.latitude),
+    Number(farmer.longitude),
+  ]);
+
+}}
+          >
+
+            {getFarmIcon(
+              farmer.farm_type
+            )}{" "}
+
+            <span className="font-medium">
+              {farmer.farmer_name}
+            </span>
+
+          </div>
+
+        ))
+
+      )}
+
+    </div>
+
+  </Popup>
+
+</Marker>
 
 )}
 
@@ -2025,58 +2026,6 @@ useEffect(() => {
       )}
 
   </MapContainer>
-
-
-
-  {myLocationMode && (
-
-<div className="mt-4 bg-white p-4 rounded-xl shadow">
-
-  <h3 className="text-lg font-semibold mb-3">
-    📍 Nearest Farmers
-  </h3>
-
-
-  {nearestFarmers.map(
-    (farmer) => (
-
-      <div
-        key={farmer.id}
-        className="
-          border-b
-          py-2
-          cursor-pointer
-          hover:bg-gray-100
-        "
-
-        onClick={() =>
-  setSelectedFarmerPosition(
-    [
-      Number(
-        farmer.latitude
-      ),
-      Number(
-        farmer.longitude
-      ),
-    ]
-  )
-}
-      >
-
-        {getFarmIcon(
-          farmer.farm_type
-        )}{" "}
-
-        {farmer.farmer_name}
-
-      </div>
-
-    )
-  )}
-
-</div>
-
-)}
 
 </div>
 
@@ -2807,18 +2756,22 @@ setFilteredAgents(
           f.longitude
       )
       .map((farmer) => (
+        
         <Marker
-          key={farmer.id}
-          position={[
-            Number(farmer.latitude),
-            Number(farmer.longitude),
-          ]}
-          icon={createFarmMarker(
-            farmer.companies?.logo_url,
-            farmer.farm_type,
-            farmer.farmer_name
-          )}
-        />
+            key={farmer.id}
+            ref={(ref) => {
+              farmerMarkerRefs.current[farmer.id] = ref;
+            }}
+            position={[
+              Number(farmer.latitude),
+              Number(farmer.longitude),
+            ]}
+            icon={createFarmMarker(
+              farmer.companies?.logo_url,
+              farmer.farm_type,
+              farmer.farmer_name
+            )}
+          />
       ))}
   </>
 }
