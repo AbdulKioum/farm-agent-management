@@ -101,16 +101,6 @@ if (loading) {
 
       <div className="w-full max-w-md text-center">
 
-        <div
-          className="
-          text-7xl
-          animate-pulse
-          mb-5
-          "
-        >
-          🌿
-        </div>
-
         <img
         src="/logo.png"
         alt="FAMS"
