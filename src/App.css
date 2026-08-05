@@ -182,3 +182,18 @@
     border-right-color: var(--border);
   }
 }
+
+.my-location-label {
+  background: #2563eb !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 4px 10px !important;
+  font-weight: 600;
+  font-size: 13px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.25);
+}
+
+.my-location-label::before {
+  display: none;
+}

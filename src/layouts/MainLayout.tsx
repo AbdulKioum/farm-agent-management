@@ -216,8 +216,8 @@ if (!loggedIn) {
           setSidebarOpen={setSidebarOpen}
         />
 
-        <main className="flex-1 overflow-auto bg-gray-50 p-6">
-          <Outlet />
+<main className="flex-1 overflow-auto bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+                <Outlet />
         </main>
       </div>
     </div>

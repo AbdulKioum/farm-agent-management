@@ -1546,18 +1546,21 @@ useEffect(() => {
 
 
       <input
-        type="text"
-        placeholder="Search Agent..."
-        value={search}
-        onChange={(e) =>
-          setSearch(
-            e.target.value
-          )
-        }
-        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none mb-3"
-      />
+  type="text"
+  placeholder="🔍 Search Agent..."
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition mb-6"
+/>
 
-<div className="flex flex-wrap gap-2 items-center mb-4">
+
+<div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 mb-6">
+
+  <h3 className="text-sm font-semibold text-slate-700 mb-3">
+    🔎 Filter Agents
+  </h3>
+
+  <div className="flex flex-wrap gap-3 items-center">
 
 
 
@@ -1577,7 +1580,7 @@ useEffect(() => {
 
 }}
 
-  className="border px-2 py-0.5 text-xs rounded ml-2"
+className="min-w-[180px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
 >
   <option value="">
     All Districts
@@ -1615,7 +1618,7 @@ useEffect(() => {
 
 }}
 
-  className="border px-2 py-0.5 text-xs rounded ml-2"
+  className="min-w-[180px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
 >
   <option value="">
     All Upazilas
@@ -1642,7 +1645,7 @@ useEffect(() => {
     setUnionFilter(e.target.value);
     setBazarFilter("");
   }}
-  className="border px-2 py-0.5 text-xs rounded ml-2"
+  className="min-w-[180px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
 >
   <option value="">
     All Unions
@@ -1667,7 +1670,7 @@ useEffect(() => {
       e.target.value
     )
   }
-  className="border px-2 py-0.5 text-xs rounded"
+  className="min-w-[180px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
 >
 
   <option value="">
@@ -1693,7 +1696,8 @@ useEffect(() => {
       e.target.value
     )
   }
-  className="border px-2 py-0.5 text-xs rounded">
+  className="min-w-[180px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+>
   <option value="">
     All Companies
   </option>
@@ -1713,60 +1717,51 @@ useEffect(() => {
 
 <button
   onClick={clearFilters}
-  className="bg-gray-600 text-white px-4 py-2 rounded"
+  className="rounded-lg bg-slate-700 hover:bg-slate-800 text-white px-5 py-2 text-sm font-medium shadow-sm transition"
 >
-  Clear Filters
+  🔄 Clear Filters
 </button>
 
 </div>
+</div>
 
-<div className="flex items-center gap-3 mb-4">
+<div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 mb-6">
 
+  <div className="flex flex-wrap items-center gap-3">
 
-<button
-  onClick={() =>
-    setShowSummary(true)
-  }
-  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded"
->
-  Summary
-</button>
+    <button
+      onClick={() => setShowSummary(true)}
+      className="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-sm transition-all"
+    >
+      📊 Summary
+    </button>
 
-<button
-  onClick={
-    exportAgentsExcel
-  }
-  className="bg-green-600 text-white px-4 py-2 rounded"
->
-  Export Excel
-</button>
+    <button
+      onClick={exportAgentsExcel}
+      className="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-sm transition-all"
+    >
+      📥 Export
+    </button>
 
+    <button
+      onClick={() => {
+        setShowSummary(false);
+        setShowMap(!showMap);
+      }}
+      className={`px-5 py-2.5 rounded-lg font-medium shadow-sm transition-all flex items-center gap-2 ${
+        showMap
+          ? "bg-slate-700 hover:bg-slate-800 text-white"
+          : "bg-blue-600 hover:bg-blue-700 text-white"
+      }`}
+    >
+      <FaMap />
+      {showMap ? "Hide Map" : "View Map"}
+    </button>
 
-   
-
-  <button
-    onClick={() =>
-      setShowMap(!showMap)
-    }
-    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded flex items-center gap-2"
-  >
-    <FaMap />
-    {showMap
-      ? "Hide Map"
-      : "Show On Map"}
-  </button>
-
-  <button
-    onClick={getMyLocation}
-    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center gap-2"
-  >
-    <FaMapMarkerAlt />
-    My Location
-  </button>
-
-
+  </div>
 
 </div>
+
 
 {showMap && (
 
@@ -1780,7 +1775,7 @@ useEffect(() => {
     </h2>
 
 
-
+<div className="relative">
     <MapContainer
   center={mapCenter}
   zoom={8}
@@ -2016,6 +2011,18 @@ useEffect(() => {
       )}
 
     </MapContainer>
+    {showMap && (
+
+    <button
+      onClick={getMyLocation}
+      className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-full shadow-xl px-5 py-2.5 font-semibold hover:from-blue-700 hover:to-sky-600 transition-all duration-300"
+    >
+      <FaMapMarkerAlt />
+      My Location
+    </button>
+
+  )}
+  </div>
 
   </div>
 )}

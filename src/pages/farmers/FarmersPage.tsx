@@ -15,6 +15,7 @@ import {
   MapContainer,
   Marker,
   Popup,
+  Tooltip,
 } from "react-leaflet";
 
 import L from "leaflet";
@@ -33,6 +34,7 @@ getFarmIcon,
 } from "../../utils/mapMarkers";
 import MapLayers from "../../components/maps/MapLayers";
 import { useRef } from "react";
+import { MapPin } from "lucide-react";
 
 
 L.Icon.Default.mergeOptions({
@@ -140,6 +142,7 @@ setShowFarmerMap] =
 useState(false);
 
 
+
   const [showSummary,
 setShowSummary] =
 useState(false);
@@ -173,6 +176,8 @@ const [filterUpazilas, setFilterUpazilas] =
 
 const [filterUnions, setFilterUnions] =
   useState<any[]>([]);
+
+
 
 
 
@@ -343,17 +348,26 @@ setDistricts(
 }: {
   position: [number, number];
 }) {
+
   const map = useMap();
 
   useEffect(() => {
-    map.flyTo(position, 17, {
+
+    if (!position) return;
+
+    map.flyTo(position, 18, {
       animate: true,
       duration: 1.5,
     });
+    map.once("moveend", () => {
+  // animation শেষ
+});
+
   }, [position, map]);
 
   return null;
 }
+
 
 
 
@@ -362,17 +376,20 @@ setDistricts(
 }: {
   positions: [number, number][];
 }) {
+
   const map = useMap();
 
   useEffect(() => {
-    if (positions.length > 0) {
-      map.fitBounds(
-        positions,
-        {
-          padding: [50, 50],
-        }
-      );
-    }
+
+    if (positions.length === 0) return;
+
+    map.fitBounds(
+      positions,
+      {
+        padding: [50, 50],
+      }
+    );
+
   }, [positions, map]);
 
   return null;
@@ -980,32 +997,38 @@ const filteredFarmers =
 
   const nearestFarmers =
   myPosition
-    ? [...filteredFarmers]
+    ? filteredFarmers
         .filter(
           (f) =>
             f.latitude &&
-            f.longitude
+            f.longitude &&
+            !isNaN(Number(f.latitude)) &&
+            !isNaN(Number(f.longitude))
         )
         .map((f) => ({
 
           ...f,
 
           distance:
-            Math.sqrt(
-              Math.pow(
-                Number(
-                  f.latitude
-                ) -
-                  myPosition[0],
-                2
-              ) +
+
+            Math.round(
+
+              Math.sqrt(
+
                 Math.pow(
-                  Number(
-                    f.longitude
-                  ) -
+                  Number(f.latitude) -
+                    myPosition[0],
+                  2
+                ) +
+
+                Math.pow(
+                  Number(f.longitude) -
                     myPosition[1],
                   2
                 )
+
+              ) * 111
+
             ),
 
         }))
@@ -1526,14 +1549,14 @@ useEffect(() => {
             e.target.value
           )
         }
-        className="border px-2 py-0.5 text-xs w-full mb-4"
+  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition mb-4"
       />
 
-      <div className="flex flex-wrap gap-2 items-center mb-4">
-
-
-
-
+<div className="bg-white border rounded-xl shadow-sm p-4 mb-5">
+  <h3 className="mb-3 text-sm font-semibold text-slate-700">
+    🔎 Filter Farmers
+</h3>
+  <div className="flex flex-wrap gap-3 items-center">
   <select
     value={districtFilter}
     onChange={(e) => {
@@ -1544,8 +1567,7 @@ useEffect(() => {
   setUnionFilter("");
 
 }}
-    className="border px-2 py-0.5 text-xs rounded"
-  >
+className="min-w-[170px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition" >
     <option value="">
       All Districts
     </option>
@@ -1574,7 +1596,7 @@ useEffect(() => {
   setUnionFilter("");
 
 }}
-    className="border px-2 py-0.5 text-xs rounded"
+    className="min-w-[170px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
   >
     <option value="">
       All Upazilas
@@ -1598,7 +1620,7 @@ useEffect(() => {
         e.target.value
       )
     }
-    className="border px-2 py-0.5 text-xs rounded"
+    className="min-w-[170px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
   >
     <option value="">
       All Unions
@@ -1622,7 +1644,7 @@ useEffect(() => {
       e.target.value
     )
   }
-  className="border px-2 py-0.5 text-xs rounded"
+  className="min-w-[170px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
 >
   <option value="">
     All Farm Types
@@ -1658,7 +1680,7 @@ useEffect(() => {
         e.target.value
       )
     }
-    className="border px-2 py-0.5 text-xs rounded"
+    className="min-w-[170px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
   >
     <option value="">
       All Companies
@@ -1682,7 +1704,7 @@ useEffect(() => {
         e.target.value
       )
     }
-    className="border px-2 py-0.5 text-xs rounded"
+    className="min-w-[170px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
   >
     <option value="">
       All Agents
@@ -1701,85 +1723,94 @@ useEffect(() => {
 
   <button
   onClick={clearFilters}
-  className="bg-gray-600 text-white px-4 py-2 rounded"
->
+className="rounded-lg bg-slate-700 px-5 py-2 text-sm font-medium text-white shadow hover:bg-slate-800 transition">
   Clear Filters
 </button>
 </div>
+</div>
 
-<div className="flex flex-wrap gap-2 items-center mb-4">
-<button
-  onClick={() =>
-    setShowSummary(true)
-  }
-  className="bg-indigo-600 text-white px-4 py-2 rounded"
->
-  Farmer Summary
-</button>
+<div className="bg-white rounded-xl shadow border p-4 mb-5">
+
+  <div className="flex flex-wrap items-center gap-3">
+<div className="flex gap-2">
 
 <button
-  onClick={
-    exportFarmersExcel
-  }
-  className="bg-green-700 text-white px-4 py-2 rounded"
+
+onClick={() => {
+
+  setShowFarmerMap(false);
+
+  setShowSummary(true);
+
+}}
+
+className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition"
 >
-  Export Farmers Excel
+📊 Summary
 </button>
+
+
+<button
+
+onClick={
+
+exportFarmersExcel
+
+}
+
+className=" px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
+
+>
+
+📥 Export
+
+</button>
+
+</div>
+
+
+<div className="flex gap-2">
 
 <button
   onClick={() => {
 
-    if (!showFarmerMap) {
+  if (!showFarmerMap) {
 
-      setMyLocationMode(
-        false
-      );
+    setMyLocationMode(false);
+    setMyPosition(null);
+    setSelectedFarmerPosition(null);
 
-      setMyPosition(
-        null
-      );
+  }
 
-      setSelectedFarmerPosition(
-        null
-      );
+  setShowSummary(false);
 
+  setShowFarmerMap(!showFarmerMap);
+
+}}
+
+  className={`
+    px-4
+    py-2
+    rounded-lg
+    font-medium
+    transition
+
+    ${
+      showFarmerMap
+        ? "bg-slate-600 hover:bg-red-700 text-white"
+        : "bg-blue-600 hover:bg-blue-700 text-white"
     }
-
-    setShowFarmerMap(
-      !showFarmerMap
-    );
-
-  }}
-  className="bg-blue-600 text-white px-4 py-2 rounded"
+  `}
 >
+
   {showFarmerMap
-    ? "Hide Map"
-    : "Show Map"}
+    ? "❌ Close Map"
+    : "🗺️ View Map"}
+
 </button>
 
-<button
-  onClick={() => {
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-
-        setMyPosition([
-          position.coords.latitude,
-          position.coords.longitude,
-        ]);
-
-        setMyLocationMode(true);
-        setSelectedFarmerPosition(null);
-      }
-    );
-
-
-  }}
-  className="bg-green-600 text-white px-4 py-2 rounded"
->
-  📍 My Location
-</button>
-
+</div>
+</div>
 </div>
 
 
@@ -1791,6 +1822,9 @@ useEffect(() => {
     Farmer Map
   </h3>
 
+
+<div className="w-full overflow-hidden rounded-xl border border-gray-200 shadow-sm">
+  <div className="relative">
   <MapContainer
 
     center={[
@@ -1806,96 +1840,130 @@ useEffect(() => {
 
     <MapLayers />
 
-    {selectedFarmerPosition && (
+    {myLocationMode && myPosition ? (
+
+  <RecenterMap
+    position={myPosition}
+  />
+
+) : selectedFarmerPosition ? (
+
   <RecenterMap
     position={selectedFarmerPosition}
   />
-)}
 
+) : null}
 
     {myPosition && (
 
   <Marker position={myPosition}>
+    <Tooltip
+  permanent
+  direction="top"
+  offset={[0, -15]}
+  className="my-location-label"
+>
+  📍 My Location
+</Tooltip>
 
-  <Popup minWidth={260}>
+    <Popup>
 
-    <div className="space-y-2">
+      <div
+        style={{
+          maxHeight: "250px",
+          overflowY: "auto",
+          width: "220px",
+        }}
+      >
 
-      <h3 className="font-bold text-base">
-        📍 Nearest Farmers
-      </h3>
+        <h3 className="text-base font-bold text-slate-800 mb-2">
+          📍 My Location
+        </h3>
 
-      {nearestFarmers.length === 0 ? (
+        <h4 className="text-base font-medium text-slate-700 mb-2">
+          Nearest Farmers
+        </h4>
 
-        <p className="text-sm text-gray-500">
-          No nearby farmers found.
-        </p>
+        {nearestFarmers.length === 0 ? (
 
-      ) : (
+          <div>No nearby farmers found.</div>
 
-        nearestFarmers.map((farmer) => (
+        ) : (
 
-          <div
-            key={farmer.id}
-            className="
-              cursor-pointer
-              rounded
-              p-2
-              hover:bg-gray-100
-            "
-          onClick={() => {
+          nearestFarmers.map(
+            (farmer, index) => (
 
-  setSelectedFarmerPosition([
-    Number(farmer.latitude),
-    Number(farmer.longitude),
-  ]);
+              <div
+                key={farmer.id}
+                style={{
+                  marginBottom: "8px",
+                }}
+              >
 
-}}
-          >
+                <button
 
-            {getFarmIcon(
-              farmer.farm_type
-            )}{" "}
+                  onClick={() => {
 
-            <span className="font-medium">
-              {farmer.farmer_name}
-            </span>
+                    setSelectedFarmerPosition([
+                      Number(farmer.latitude),
+                      Number(farmer.longitude),
+                    ]);
+                    setMyLocationMode(false);
 
-          </div>
+                  }}
 
-        ))
+                  style={{
+                    border: "none",
+                    background: "none",
+                    color: "#2563eb",
+                    cursor: "pointer",
+                    fontWeight: "bold",
+                    padding: 0,
+                  }}
+                >
 
-      )}
+                  {index + 1}. {farmer.farmer_name}
 
-    </div>
+                </button>
 
-  </Popup>
+                <br />
 
-</Marker>
+                {farmer.distance} km
+
+              </div>
+
+            )
+          )
+
+        )}
+
+      </div>
+
+    </Popup>
+
+  </Marker>
 
 )}
 
 
-<FitBounds
-  positions={
-    myLocationMode
-      ? []
-      : filteredFarmers
-          .filter(
-            (f) =>
-              f.latitude &&
-              f.longitude
-          )
-          .map((f) => [
-            Number(
-              f.latitude
-            ),
-            Number(
-              f.longitude
-            ),
-          ])
-  }
-/>
+{!selectedFarmerPosition && (
+  <FitBounds
+    positions={
+      myLocationMode
+        ? []
+        : filteredFarmers
+            .filter(
+              (f) =>
+                f.latitude &&
+                f.longitude
+            )
+            .map((f) => [
+              Number(f.latitude),
+              Number(f.longitude),
+            ])
+    }
+  />
+)}
 
 
 
@@ -1910,17 +1978,29 @@ useEffect(() => {
         (farmer) => (
 
          <Marker
-          key={farmer.id}
-          position={[
-            Number(farmer.latitude),
-            Number(farmer.longitude),
-          ]}
-          icon={createFarmMarker(
-            farmer.companies?.logo_url,
-            farmer.farm_type,
-            farmer.farmer_name
-          )}
-        >
+
+  key={farmer.id}
+
+  ref={(ref) => {
+
+    farmerMarkerRefs.current[
+      farmer.id
+    ] = ref;
+
+  }}
+
+  position={[
+    Number(farmer.latitude),
+    Number(farmer.longitude),
+  ]}
+
+  icon={createFarmMarker(
+    farmer.companies?.logo_url,
+    farmer.farm_type,
+    farmer.farmer_name
+  )}
+
+>
 
             <Popup maxWidth={350}>
 
@@ -2026,6 +2106,44 @@ useEffect(() => {
       )}
 
   </MapContainer>
+    
+
+{showFarmerMap && (
+
+<button
+
+onClick={() => {
+
+navigator.geolocation.getCurrentPosition(
+
+(position) => {
+
+setSelectedFarmerPosition(null);
+
+setMyPosition([
+
+position.coords.latitude,
+
+position.coords.longitude,
+
+]);
+
+setMyLocationMode(true);
+
+}
+
+);
+
+}}
+
+className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-full shadow-xl px-4 py-2 font-semibold hover:from-blue-700 hover:to-sky-600 transition-all duration-300">
+  <MapPin size={18} />
+  <span>Locate Me</span>
+</button>
+
+)}
+  </div>
+  </div>
 
 </div>
 
