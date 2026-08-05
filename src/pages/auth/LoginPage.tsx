@@ -61,44 +61,97 @@ const from =
 );
 }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center">
+ return (
+  <div className="min-h-screen bg-gradient-to-br from-sky-100 via-blue-50 to-emerald-100 flex items-center justify-center p-6 relative overflow-hidden">
 
-      <div className="border rounded-lg p-6 w-[400px]">
+    {/* Background Blur */}
+    <div className="absolute -top-40 -left-40 w-96 h-96 bg-sky-300/30 rounded-full blur-3xl"></div>
 
-        <h1 className="text-2xl font-bold mb-4">
-          Login
-        </h1>
+    <div className="absolute -bottom-40 -right-40 w-[420px] h-[420px] bg-emerald-300/30 rounded-full blur-3xl"></div>
 
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) =>
-            setEmail(e.target.value)
-          }
-          className="border p-2 w-full mb-3"
-        />
+    {/* Login Card */}
+    <div className="relative w-full max-w-md">
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) =>
-            setPassword(e.target.value)
-          }
-          className="border p-2 w-full mb-3"
-        />
+      <div className="rounded-3xl bg-white/80 backdrop-blur-xl shadow-2xl border border-white/60 p-8">
 
+        {/* Logo */}
+        <div className="text-center mb-8">
+
+          <div className="text-6xl mb-3">
+            <img
+            src="/logo.png"
+            alt="FAMS"
+            className="w-28 h-28 mx-auto mb-4"
+          />
+          </div>
+
+          <h1 className="text-3xl font-bold text-slate-800">
+            Farm & Agent
+          </h1>
+
+          <h2 className="text-2xl font-bold text-emerald-600 mb-2">
+            Management System
+          </h2>
+
+          
+
+        </div>
+
+        {/* Email */}
+        <div className="mb-4">
+
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Email Address
+          </label>
+
+          <input
+            type="email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          />
+
+        </div>
+
+        {/* Password */}
+        <div className="mb-6">
+
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Password
+          </label>
+
+          <input
+            type="password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          />
+
+        </div>
+
+        {/* Login Button */}
         <button
           onClick={handleLogin}
-          className="bg-blue-600 text-white px-4 py-2 rounded w-full"
+          className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-emerald-600 py-3 font-semibold text-white shadow-lg transition duration-300 hover:scale-[1.02] hover:shadow-xl"
         >
-          Login
+          Sign In
         </button>
+
+        {/* Footer */}
+        <div className="mt-8 text-center">
+
+          <p className="text-xs text-slate-500">
+            © 2026 Farm & Agent Management System
+          </p>
+
+        </div>
 
       </div>
 
     </div>
-  );
+
+  </div>
+);
 }

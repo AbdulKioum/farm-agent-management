@@ -111,16 +111,11 @@ if (loading) {
           🌿
         </div>
 
-        <h1
-          className="
-          text-5xl
-          font-extrabold
-          tracking-wide
-          text-emerald-700
-          "
-        >
-          FAMS
-        </h1>
+        <img
+        src="/logo.png"
+        alt="FAMS"
+        className="w-28 h-28 mx-auto mb-4"
+      />
 
         <p
           className="

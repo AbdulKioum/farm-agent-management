@@ -51,20 +51,20 @@ const menuClass = (path: string) =>
 
     <div className="flex items-center gap-3">
 
-      <div className="h-11 w-11 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold text-xl shrink-0">
-        F
-      </div>
+      
 
       {sidebarOpen && (
 
         <div>
 
-          <h2 className="font-bold text-lg">
-            FAMS
-          </h2>
+          <img
+            src="/logo.png"
+            alt="FAMS"
+            className="w-28 h-28 mx-auto mb-4"
+          />
 
           <p className="text-xs text-gray-500">
-            Farm Management
+            Farm and Agent Management
           </p>
 
         </div>

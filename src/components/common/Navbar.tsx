@@ -55,17 +55,30 @@ const pageTitle =
 
 
 
+  <div className="flex items-center gap-3">
+
+  <img
+    src="/logo.png"
+    alt="FAMS Logo"
+    className="w-12 h-12 object-contain"
+  />
+
   <div>
 
     <h2 className="text-xl font-bold text-gray-800">
       {pageTitle}
     </h2>
 
-    <p className="text-xs text-gray-500">
-      Farm & Agent Management System
-    </p>
+    <p className="text-xs text-gray-500 tracking-wide">
+  Farm & Agent Management System
+  <span className="ml-2 rounded bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+    v1.0
+  </span>
+</p>
 
   </div>
+
+</div>
 
 </div>
 
