@@ -18,11 +18,11 @@ import {
   FaMapMarkerAlt,
   FaMap,
 } from "react-icons/fa";
-import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { getBazars } from "../../services/bazarService";
 import {createAgentMarker} from "../../utils/mapMarkers";
 import MapLayers from "../../components/maps/MapLayers";
+import ExcelJS from "exceljs";
 
 
 
@@ -104,7 +104,7 @@ export default function AgentsPage() {
   const [companyFilter, setCompanyFilter] =
   useState("");
   const [districtFilter, setDistrictFilter] =
-  useState("");
+  useState("Mymensingh");
   const [upazilaFilter, setUpazilaFilter] =
   useState("");
 
@@ -933,128 +933,488 @@ const filteredBazars =
     }
   );
 
-  function exportAgentsExcel() {
 
-  const exportData =
-    sortedAgents.map(
-      (agent: any) => ({
-        Company:
-          agent.companies
-            ?.company_name || "",
+// Export Excel==================================================
 
-        Agent_Name:
-          agent.agent_name,
+async function exportAgentsExcel() {
+  try {
 
-        Proprietor:
-          agent.proprietor,
+    // ==================================================
+    // WORKBOOK
+    // ==================================================
 
-        Mobile:
-          agent.mobile,
+    const workbook = new ExcelJS.Workbook();
 
-        Bazar:
-          agent.bazar,
+    const worksheet =
+      workbook.addWorksheet("Agents");
 
-        District:
-          agent.district,
+    // ==================================================
+    // HEADER
+    // ==================================================
 
-        Upazila:
-          agent.upazila,
+    worksheet.getRow(1).values = [
 
-        Union:
-          agent.union_name,
+      "Company",
+      "Agent Name",
+      "Proprietor",
+      "Mobile",
+      "Bazar",
+      "District",
+      "Upazila",
+      "Union",
 
-        Broiler_Sale:
-          agent.broiler_sale || 0,
+      "Broiler Sale",
+      "Layer Sale",
+      "Sonali Sale",
+      "Cattle Sale",
+      "Fish Sale",
 
-        Layer_Sale:
-          agent.layer_sale || 0,
+      "Total Monthly Sale",
 
-        Sonali_Sale:
-          agent.sonali_sale || 0,
+      "Focus Item",
+      "Status",
 
-        Cattle_Sale:
-          agent.cattle_sale || 0,
+    ];
 
-        Fish_Sale:
-          agent.fish_sale || 0,
+    // ==================================================
+    // DATA
+    // ==================================================
 
-        Total_Monthly_Sale:
-          agent.monthly_sale || 0,
+    sortedAgents.forEach((agent: any) => {
 
-        Focus_Item:
-          agent.focus_item,
+      worksheet.addRow([
 
-        Status:
-          agent.status,
-      })
-    );
+        agent.companies
+          ?.company_name || "",
 
-  const worksheet =
-    XLSX.utils.json_to_sheet(
-      exportData
-    );
+        agent.agent_name || "",
 
-  const workbook =
-    XLSX.utils.book_new();
+        agent.proprietor || "",
 
-  XLSX.utils.book_append_sheet(
-    workbook,
-    worksheet,
-    "Agents"
-  );
+        agent.mobile || "",
 
-  const excelBuffer =
-    XLSX.write(
-      workbook,
-      {
-        bookType: "xlsx",
-        type: "array",
+        agent.bazar || "",
+
+        agent.district || "",
+
+        agent.upazila || "",
+
+        agent.union_name || "",
+
+        Number(
+          agent.broiler_sale || 0
+        ),
+
+        Number(
+          agent.layer_sale || 0
+        ),
+
+        Number(
+          agent.sonali_sale || 0
+        ),
+
+        Number(
+          agent.cattle_sale || 0
+        ),
+
+        Number(
+          agent.fish_sale || 0
+        ),
+
+        Number(
+          agent.monthly_sale || 0
+        ),
+
+        agent.focus_item || "",
+
+        agent.status || "",
+
+      ]);
+
+    });
+
+    // ==================================================
+    // HEADER STYLE
+    // ==================================================
+
+    for (
+      let col = 1;
+      col <= 16;
+      col++
+    ) {
+
+      const cell =
+        worksheet.getCell(1, col);
+
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: {
+          argb: "1E3A8A",
+        },
+      };
+
+      cell.font = {
+        bold: true,
+        color: {
+          argb: "FFFFFFFF",
+        },
+      };
+
+      cell.alignment = {
+        horizontal: "center",
+        vertical: "middle",
+        wrapText: true,
+      };
+
+      cell.border = {
+
+        top: {
+          style: "thin",
+          color: {
+            argb: "FFFFFF",
+          },
+        },
+
+        left: {
+          style: "thin",
+          color: {
+            argb: "FFFFFF",
+          },
+        },
+
+        bottom: {
+          style: "thin",
+          color: {
+            argb: "FFFFFF",
+          },
+        },
+
+        right: {
+          style: "thin",
+          color: {
+            argb: "FFFFFF",
+          },
+        },
+
+      };
+
+    }
+
+    // ==================================================
+    // SALES HEADER
+    // ==================================================
+
+    for (
+      let col = 9;
+      col <= 14;
+      col++
+    ) {
+
+      const cell =
+        worksheet.getCell(1, col);
+
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: {
+          argb: "D97706",
+        },
+      };
+
+      cell.font = {
+        bold: true,
+        color: {
+          argb: "FFFFFFFF",
+        },
+      };
+
+    }
+
+    // Total Monthly Sale
+    worksheet.getCell("N1").fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: {
+        argb: "15803D",
+      },
+    };
+
+    // ==================================================
+    // DATA STYLE
+    // ==================================================
+
+    worksheet.eachRow(
+      (row, rowNumber) => {
+
+        if (rowNumber >= 2) {
+
+          row.eachCell(
+            (cell) => {
+
+              cell.border = {
+
+                top: {
+                  style: "thin",
+                  color: {
+                    argb: "D1D5DB",
+                  },
+                },
+
+                left: {
+                  style: "thin",
+                  color: {
+                    argb: "D1D5DB",
+                  },
+                },
+
+                bottom: {
+                  style: "thin",
+                  color: {
+                    argb: "D1D5DB",
+                  },
+                },
+
+                right: {
+                  style: "thin",
+                  color: {
+                    argb: "D1D5DB",
+                  },
+                },
+
+              };
+
+              cell.alignment = {
+                vertical: "middle",
+                wrapText: true,
+              };
+
+            }
+          );
+
+        }
+
       }
     );
 
-  const file =
-    new Blob(
-      [excelBuffer],
+    // ==================================================
+    // NUMBER FORMATTING
+    // ==================================================
+
+    for (
+      let row = 2;
+      row <= worksheet.rowCount;
+      row++
+    ) {
+
+      // Sales columns
+      for (
+        let col = 9;
+        col <= 14;
+        col++
+      ) {
+
+        worksheet
+          .getCell(row, col)
+          .numFmt = "#,##0";
+
+        worksheet
+          .getCell(row, col)
+          .alignment = {
+            horizontal: "center",
+            vertical: "middle",
+          };
+
+      }
+
+    }
+
+    // ==================================================
+    // STATUS STYLE
+    // ==================================================
+
+    for (
+      let row = 2;
+      row <= worksheet.rowCount;
+      row++
+    ) {
+
+      const status =
+        worksheet
+          .getCell(row, 16);
+
+      status.alignment = {
+        horizontal: "center",
+        vertical: "middle",
+      };
+
+      if (
+        status.value === "Active"
+      ) {
+
+        status.font = {
+          bold: true,
+          color: {
+            argb: "15803D",
+          },
+        };
+
+      }
+
+    }
+
+    // ==================================================
+    // COLUMN WIDTH
+    // ==================================================
+
+    const widths = [
+
+      25, // Company
+      22, // Agent
+      20, // Proprietor
+      16, // Mobile
+      20, // Bazar
+      18, // District
+      18, // Upazila
+      18, // Union
+
+      15, // Broiler
+      15, // Layer
+      15, // Sonali
+      15, // Cattle
+      15, // Fish
+
+      20, // Total Sale
+
+      20, // Focus Item
+      14, // Status
+
+    ];
+
+    widths.forEach(
+      (width, index) => {
+
+        worksheet
+          .getColumn(index + 1)
+          .width = width;
+
+      }
+    );
+
+    // ==================================================
+    // ROW HEIGHT
+    // ==================================================
+
+    worksheet.getRow(1).height = 30;
+
+    for (
+      let row = 2;
+      row <= worksheet.rowCount;
+      row++
+    ) {
+
+      worksheet.getRow(row).height = 22;
+
+    }
+
+    // ==================================================
+    // FREEZE HEADER
+    // ==================================================
+
+    worksheet.views = [
+      {
+        state: "frozen",
+        ySplit: 1,
+      },
+    ];
+
+    // ==================================================
+    // AUTO FILTER
+    // ==================================================
+
+    worksheet.autoFilter = {
+      from: "A1",
+      to: "P1",
+    };
+
+    // ==================================================
+    // PRINT SETTINGS
+    // ==================================================
+
+    worksheet.pageSetup.orientation =
+      "landscape";
+
+    worksheet.pageSetup.fitToPage = true;
+
+    worksheet.pageSetup.fitToWidth = 1;
+
+    worksheet.pageSetup.fitToHeight = 0;
+
+    // ==================================================
+    // EXPORT
+    // ==================================================
+
+    const buffer =
+      await workbook.xlsx.writeBuffer();
+
+    const blob = new Blob(
+      [buffer],
       {
         type:
           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       }
     );
 
-  const today =
-  new Date()
-    .toISOString()
-    .split("T")[0];
+    const today =
+      new Date()
+        .toISOString()
+        .split("T")[0];
 
-const selectedCompany =
-  companies.find(
-    (c) =>
-      String(c.id) ===
-      companyFilter
-  )?.company_name;
+    const selectedCompany =
+      companies.find(
+        (c) =>
+          String(c.id) ===
+          companyFilter
+      )?.company_name;
 
-const fileName =
-  `Agents_${
-    selectedCompany ||
-    "All"
-  }_${
-    districtFilter ||
-    "AllDistricts"
-  }_${
-    upazilaFilter ||
-    "AllUpazilas"
-  }_${
-    unionFilter ||
-    "AllUnions"
-  }_${
-    today
-  }.xlsx`;
+    const fileName =
+      `Agents_${
+        selectedCompany ||
+        "All"
+      }_${
+        districtFilter ||
+        "AllDistricts"
+      }_${
+        upazilaFilter ||
+        "AllUpazilas"
+      }_${
+        unionFilter ||
+        "AllUnions"
+      }_${
+        today
+      }.xlsx`;
 
-saveAs(
-  file,
-  fileName
-);
+    saveAs(
+      blob,
+      fileName
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Agent Excel Export Error:",
+      error
+    );
+
+    alert(
+      "Agent Excel export failed. Please check the browser console."
+    );
+
+  }
 }
+
+
+
 
 useEffect(() => {
   setMyLocationMode(false);
