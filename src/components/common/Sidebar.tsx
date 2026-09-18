@@ -11,6 +11,7 @@ import {
   FaUserShield,
   FaAngleLeft,
   FaAngleRight,
+  FaUserCheck, // Notun icon add kora hoyeche Farmer Status er jonno
 } from "react-icons/fa";
 
 export default function Sidebar({
@@ -142,6 +143,16 @@ export default function Sidebar({
             >
               <FaUserFriends className="text-lg shrink-0" />
               {sidebarOpen && "Farmers"}
+            </Link>
+
+            {/* Farmer Status Page Link Add Kora Holo */}
+            <Link
+              to="/farmer-status"
+              className={menuClass("/farmer-status")}
+              title="Farmer Status"
+            >
+              <FaUserCheck className="text-lg shrink-0" />
+              {sidebarOpen && "Farmer Status"}
             </Link>
 
             <Link
