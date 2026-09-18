@@ -800,7 +800,6 @@ export default function VetVisitsPage() {
                 <label className="block text-xs font-bold text-slate-600 mb-1">Floor Space</label>
                 <input type="text" value={beforeForm.floor_space} onChange={(e)=>setBeforeForm({...beforeForm, floor_space: e.target.value})} className="w-full border rounded p-2" />
               </div>
-              
               <div>
                 <label className="block text-xs font-bold text-slate-600 mb-1">Litter Condition</label>
                 <input type="text" value={beforeForm.litter_condition} onChange={(e)=>setBeforeForm({...beforeForm, litter_condition: e.target.value})} className="w-full border rounded p-2" />
@@ -994,7 +993,7 @@ export default function VetVisitsPage() {
       {/* History Modal */}
       {showHistoryModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
-          <div className="bg-white p-6 rounded-xl w-[850px] max-h-[90vh] overflow-auto shadow-xl">
+          <div className="bg-white p-6 rounded-xl w-[900px] max-h-[90vh] overflow-auto shadow-xl">
             <div className="flex justify-between items-center mb-4 border-b pb-3">
               <h3 className="text-lg font-bold text-slate-800">
                 Farmer History: {selectedHistoryVisit?.farmers?.farmer_name || selectedHistoryVisit?.farmers?.name || "N/A"} ({selectedHistoryVisit?.category || "Broiler"})
@@ -1003,47 +1002,75 @@ export default function VetVisitsPage() {
             </div>
 
             <div className="space-y-6">
-              {/* If Category is Layer, show only Layer reports */}
+              {/* If Category is Layer, show full detailed Layer reports */}
               {selectedHistoryVisit?.category?.toLowerCase() === "layer" ? (
                 <div>
                   <h4 className="font-bold text-indigo-700 mb-2">Layer Reports ({farmerHistory.layer.length})</h4>
                   {farmerHistory.layer.length === 0 ? (
                     <p className="text-xs text-slate-400 italic">No layer reports found.</p>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {farmerHistory.layer.map((rep: any, i: number) => (
-                        <div key={i} className="bg-indigo-50/50 p-3 rounded border border-indigo-100 text-xs grid grid-cols-3 gap-2">
-                          <div><strong>Visit Date:</strong> {rep.visit_date || new Date(rep.created_at).toLocaleDateString()}</div>
-                          <div><strong>Age on Visit:</strong> {calculateAge(selectedHistoryVisit?.hatch_date, "Layer", rep.visit_date)}</div>
-                          <div><strong>B. Weight:</strong> {rep.b_weight_g}g</div>
-                          <div><strong>Feed Intake:</strong> {rep.feed_intake_g}g</div>
-                          <div><strong>Egg Production:</strong> {rep.egg_production}%</div>
-                          <div><strong>Egg Weight:</strong> {rep.egg_weight}g</div>
-                          <div><strong>Disease:</strong> {rep.disease || "-"}</div>
-                          <div><strong>Vaccine:</strong> {rep.vaccine || "-"}</div>
-                          <div><strong>Remarks:</strong> {rep.remarks || "-"}</div>
+                        <div key={i} className="bg-indigo-50/50 p-4 rounded-lg border border-indigo-100 text-xs">
+                          <div className="grid grid-cols-3 gap-3">
+                            <div><strong>Visit Date:</strong> {rep.visit_date || "-"}</div>
+                            <div><strong>Age on Visit:</strong> {calculateAge(selectedHistoryVisit?.hatch_date, "Layer", rep.visit_date)}</div>
+                            <div><strong>B. Weight:</strong> {rep.b_weight_g} g</div>
+                            <div><strong>Feed Intake:</strong> {rep.feed_intake_g} g</div>
+                            <div><strong>Egg Production:</strong> {rep.egg_production} %</div>
+                            <div><strong>Egg Weight:</strong> {rep.egg_weight} g</div>
+                            <div><strong>Feed Company:</strong> {rep.feed_company || "-"}</div>
+                            <div><strong>Feed Type:</strong> {rep.feed_type || "-"}</div>
+                            <div><strong>Pro. Date:</strong> {rep.pro_date || "-"}</div>
+                            <div><strong>Batch No:</strong> {rep.batch_no || "-"}</div>
+                            <div><strong>Hatchery:</strong> {rep.hatchery || "-"}</div>
+                            <div><strong>Breed:</strong> {rep.breed || "-"}</div>
+                            <div><strong>Disease:</strong> {rep.disease || "-"}</div>
+                            <div><strong>Vaccine:</strong> {rep.vaccine || "-"}</div>
+                            <div className="col-span-3"><strong>Remarks:</strong> {rep.remarks || "-"}</div>
+                          </div>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
               ) : (
-                /* Otherwise show Broiler reports (Before & After Sale) */
+                /* Otherwise show Broiler reports (Before & After Sale with full details) */
                 <>
                   <div>
                     <h4 className="font-bold text-emerald-700 mb-2">Before Sale Reports ({farmerHistory.before.length})</h4>
                     {farmerHistory.before.length === 0 ? (
                       <p className="text-xs text-slate-400 italic">No before sale reports found.</p>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {farmerHistory.before.map((rep: any, i: number) => (
-                          <div key={i} className="bg-slate-50 p-3 rounded border text-xs grid grid-cols-3 gap-2">
-                            <div><strong>Visit Date:</strong> {rep.visit_date || new Date(rep.created_at).toLocaleDateString()}</div>
-                            <div><strong>Age on Visit:</strong> {calculateAge(selectedHistoryVisit?.hatch_date, "Broiler", rep.visit_date)}</div>
-                            <div><strong>Mortality:</strong> {rep.mortality_pcs}</div>
-                            <div><strong>Weight:</strong> {rep.weight_gm_b}g</div>
-                            <div><strong>FCR (w/o M):</strong> {rep.fcr_w_out_m}</div>
-                            <div><strong>Remarks:</strong> {rep.remarks || "-"}</div>
+                          <div key={i} className="bg-slate-50 p-4 rounded-lg border text-xs">
+                            <div className="grid grid-cols-3 gap-3">
+                              <div><strong>Visit Date:</strong> {rep.visit_date || "-"}</div>
+                              <div><strong>Age on Visit:</strong> {calculateAge(selectedHistoryVisit?.hatch_date, "Broiler", rep.visit_date)}</div>
+                              <div><strong>Mortality:</strong> {rep.mortality_pcs} Pcs</div>
+                              <div><strong>Weight:</strong> {rep.weight_gm_b} g</div>
+                              <div><strong>Feed (T. Kg):</strong> {rep.feed_t_kg} Kg</div>
+                              <div><strong>Feed (g/b):</strong> {rep.feed_gm_b}</div>
+                              <div><strong>FCR (w/o M):</strong> {rep.fcr_w_out_m}</div>
+                              <div><strong>FCR (With M):</strong> {rep.fcr_with_m}</div>
+                              <div><strong>Uneven:</strong> {rep.uneven || "-"}</div>
+                              <div><strong>Indigestion:</strong> {rep.indigestion || "-"}</div>
+                              <div><strong>Orange Feces:</strong> {rep.orange_feces || "-"}</div>
+                              <div><strong>Watery Feces:</strong> {rep.watery_feces || "-"}</div>
+                              <div><strong>Feeder:</strong> {rep.feeder || "-"}</div>
+                              <div><strong>Drinker:</strong> {rep.drinker || "-"}</div>
+                              <div><strong>Floor Space:</strong> {rep.floor_space || "-"}</div>
+                              <div><strong>Litter Condition:</strong> {rep.litter_condition || "-"}</div>
+                              <div><strong>Ventilation:</strong> {rep.ventilation || "-"}</div>
+                              <div><strong>Feed Scattering:</strong> {rep.feed_scattering || "-"}</div>
+                              <div><strong>Feed Hardness:</strong> {rep.feed_hardness || "-"}</div>
+                              <div><strong>Feed Company:</strong> {rep.feed_company || "-"}</div>
+                              <div><strong>Feed Type:</strong> {rep.feed_type || "-"}</div>
+                              <div><strong>Pro. Date:</strong> {rep.pro_date || "-"}</div>
+                              <div><strong>Batch No:</strong> {rep.batch_no || "-"}</div>
+                              <div className="col-span-3"><strong>Remarks:</strong> {rep.remarks || "-"}</div>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1055,15 +1082,21 @@ export default function VetVisitsPage() {
                     {farmerHistory.after.length === 0 ? (
                       <p className="text-xs text-slate-400 italic">No after sale reports found.</p>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {farmerHistory.after.map((rep: any, i: number) => (
-                          <div key={i} className="bg-slate-50 p-3 rounded border text-xs grid grid-cols-3 gap-2">
-                            <div><strong>Visit Date:</strong> {rep.visit_date || new Date(rep.created_at).toLocaleDateString()}</div>
-                            <div><strong>Mortality:</strong> {rep.mortality}</div>
-                            <div><strong>Weight:</strong> {rep.weight}g</div>
-                            <div><strong>Feed Consump:</strong> {rep.feed_consumption_kg} Kg</div>
-                            <div><strong>FCR (w/o M):</strong> {rep.fcr_w_out_m}</div>
-                            <div><strong>Remarks:</strong> {rep.remarks || "-"}</div>
+                          <div key={i} className="bg-slate-50 p-4 rounded-lg border text-xs">
+                            <div className="grid grid-cols-3 gap-3">
+                              <div><strong>Visit Date:</strong> {rep.visit_date || "-"}</div>
+                              <div><strong>Age on Visit:</strong> {calculateAge(selectedHistoryVisit?.hatch_date, "Broiler", rep.visit_date)}</div>
+                              <div><strong>Mortality:</strong> {rep.mortality} Pcs</div>
+                              <div><strong>Weight:</strong> {rep.weight} g</div>
+                              <div><strong>Feed Consump:</strong> {rep.feed_consumption_kg} Kg</div>
+                              <div><strong>Feed:</strong> {rep.feed || "-"}</div>
+                              <div><strong>Feed Mill:</strong> {rep.feed_mill || "-"}</div>
+                              <div><strong>FCR (w/o M):</strong> {rep.fcr_w_out_m}</div>
+                              <div><strong>FCR (With M):</strong> {rep.fcr_with_m}</div>
+                              <div className="col-span-3"><strong>Remarks:</strong> {rep.remarks || "-"}</div>
+                            </div>
                           </div>
                         ))}
                       </div>
