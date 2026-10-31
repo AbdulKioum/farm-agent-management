@@ -1,3 +1,4 @@
+import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   FaHome,
@@ -9,216 +10,236 @@ import {
   FaClipboardList,
   FaChartBar,
   FaUserShield,
-  FaAngleLeft,
-  FaAngleRight,
-  FaUserCheck, // Notun icon add kora hoyeche Farmer Status er jonno
+  FaUserCheck,
+  FaTimes,
+  FaSignOutAlt,
+  FaUserCircle,
 } from "react-icons/fa";
+import { supabase } from "../../lib/supabase";
 
 export default function Sidebar({
   role,
+  userName,
   sidebarOpen,
   setSidebarOpen,
 }: {
   role: string;
+  userName?: string;
   sidebarOpen: boolean;
   setSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const location = useLocation();
 
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
+
+  // Menu link-e click korle sidebar auto close hobe
+  function handleMenuClick() {
+    setSidebarOpen(false);
+  }
+
   const menuClass = (path: string) =>
-    `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+    `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
       location.pathname === path
-        ? "bg-emerald-600 text-white shadow"
-        : "text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 hover:translate-x-1"
+        ? "bg-emerald-600 text-white shadow-sm"
+        : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-700"
     }`;
 
   return (
-    <aside
-      className={`${
-        sidebarOpen ? "w-64" : "w-20"
-      } shrink-0 bg-white border-r shadow-sm min-h-screen flex flex-col transition-all duration-300`}
-    >
-      {/* Header / Logo */}
-      <div className="border-b px-4 py-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {sidebarOpen && (
-              <div>
-                <img
-                  src="/logo.png"
-                  alt="FAMS"
-                  className="w-24 h-24 mx-auto mb-2 object-contain"
-                />
-                <p className="text-xs text-gray-500 text-center">
-                  Farm and Agent Management
-                </p>
-              </div>
-            )}
+    <>
+      {/* Backdrop Overlay (Baire click korle menu close hobe) */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] transition-opacity"
+        />
+      )}
+
+      {/* Slide-out Left Drawer */}
+      <aside
+        className={`fixed top-0 left-0 z-50 h-full w-64 max-w-[80vw] bg-white border-r border-slate-200 shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {/* Top Header: Logo & Close Button */}
+        <div className="flex items-center justify-between px-4 h-14 sm:h-16 border-b border-slate-100 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/logo smart team.png"
+              alt="Logo"
+              className="w-9 h-9 object-contain"
+            />
+            <span className="font-bold text-slate-800 text-base tracking-tight">
+              Menu
+            </span>
           </div>
 
           <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="h-10 w-10 rounded-full bg-emerald-600 text-white shadow-md flex items-center justify-center transition-all duration-300 hover:bg-emerald-700 hover:scale-110 active:scale-95"
-            title={sidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"}
+            onClick={() => setSidebarOpen(false)}
+            className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition"
+            aria-label="Close Sidebar"
           >
-            {sidebarOpen ? (
-              <FaAngleLeft size={18} />
-            ) : (
-              <FaAngleRight size={18} />
-            )}
+            <FaTimes size={16} />
           </button>
         </div>
-      </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto flex flex-col gap-2 px-3 py-4">
-        {/* Dashboard */}
-        <Link to="/" className={menuClass("/")} title="Dashboard">
-          <FaHome className="text-lg shrink-0" />
-          {sidebarOpen && "Dashboard"}
-        </Link>
+        {/* Navigation Links */}
+        <nav className="flex-1 overflow-y-auto flex flex-col gap-1 px-3 py-3">
+          {/* Dashboard */}
+          <Link
+            to="/"
+            onClick={handleMenuClick}
+            className={menuClass("/")}
+          >
+            <FaHome className="text-base shrink-0" />
+            <span>Dashboard</span>
+          </Link>
 
-        {/* Management Section */}
-        {(role === "super_admin" ||
-          role === "admin" ||
-          role === "manager") && (
-          <>
-            {sidebarOpen && (
-              <div className="mt-4 mb-1 px-4 text-xs font-bold uppercase tracking-wider text-gray-400">
+          {/* Management Section */}
+          {(role === "super_admin" ||
+            role === "admin" ||
+            role === "manager") && (
+            <>
+              <div className="mt-3 mb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Management
               </div>
-            )}
 
-            <Link
-              to="/companies"
-              className={menuClass("/companies")}
-              title="Companies"
-            >
-              <FaBuilding className="text-lg shrink-0" />
-              {sidebarOpen && "Companies"}
-            </Link>
+              <Link
+                to="/companies"
+                onClick={handleMenuClick}
+                className={menuClass("/companies")}
+              >
+                <FaBuilding className="text-base shrink-0" />
+                <span>Companies</span>
+              </Link>
 
-            <Link
-              to="/agents"
-              className={menuClass("/agents")}
-              title="Agents"
-            >
-              <FaUsers className="text-lg shrink-0" />
-              {sidebarOpen && "Agents"}
-            </Link>
+              <Link
+                to="/agents"
+                onClick={handleMenuClick}
+                className={menuClass("/agents")}
+              >
+                <FaUsers className="text-base shrink-0" />
+                <span>Agents</span>
+              </Link>
 
-            {/* Sub Agents Link */}
-            <Link
-              to="/sub-agents"
-              className={menuClass("/sub-agents")}
-              title="Sub Agents"
-            >
-              <FaSitemap className="text-lg shrink-0" />
-              {sidebarOpen && "Sub Agents"}
-            </Link>
+              <Link
+                to="/sub-agents"
+                onClick={handleMenuClick}
+                className={menuClass("/sub-agents")}
+              >
+                <FaSitemap className="text-base shrink-0" />
+                <span>Sub Agents</span>
+              </Link>
 
-            {/* Retailers Link */}
-            <Link
-              to="/retailers"
-              className={menuClass("/retailers")}
-              title="Retailers"
-            >
-              <FaStore className="text-lg shrink-0" />
-              {sidebarOpen && "Retailers"}
-            </Link>
-          </>
-        )}
+              <Link
+                to="/retailers"
+                onClick={handleMenuClick}
+                className={menuClass("/retailers")}
+              >
+                <FaStore className="text-base shrink-0" />
+                <span>Retailers</span>
+              </Link>
+            </>
+          )}
 
-        {/* Farmers & Visits */}
-        {(role === "super_admin" ||
-          role === "admin" ||
-          role === "manager" ||
-          role === "officer" ||
-          role === "agent") && (
-          <>
-            <Link
-              to="/farmers"
-              className={menuClass("/farmers")}
-              title="Farmers"
-            >
-              <FaUserFriends className="text-lg shrink-0" />
-              {sidebarOpen && "Farmers"}
-            </Link>
+          {/* Farmers & Visits */}
+          {(role === "super_admin" ||
+            role === "admin" ||
+            role === "manager" ||
+            role === "officer" ||
+            role === "agent") && (
+            <>
+              <div className="mt-3 mb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Field Operations
+              </div>
 
-            {/* Farmer Status Page Link Add Kora Holo */}
-            <Link
-              to="/farmer-status"
-              className={menuClass("/farmer-status")}
-              title="Farmer Status"
-            >
-              <FaUserCheck className="text-lg shrink-0" />
-              {sidebarOpen && "Farmer Status"}
-            </Link>
+              <Link
+                to="/farmers"
+                onClick={handleMenuClick}
+                className={menuClass("/farmers")}
+              >
+                <FaUserFriends className="text-base shrink-0" />
+                <span>Farmers</span>
+              </Link>
 
-            <Link
-              to="/visits"
-              className={menuClass("/visits")}
-              title="Vet Visits"
-            >
-              <FaClipboardList className="text-lg shrink-0" />
-              {sidebarOpen && "Vet Visits"}
-            </Link>
-          </>
-        )}
+              <Link
+                to="/farmer-status"
+                onClick={handleMenuClick}
+                className={menuClass("/farmer-status")}
+              >
+                <FaUserCheck className="text-base shrink-0" />
+                <span>Farmer Status</span>
+              </Link>
 
-        {/* Analytics Section */}
-        {sidebarOpen && (
-          <div className="mt-4 mb-1 px-4 text-xs font-bold uppercase tracking-wider text-gray-400">
+              <Link
+                to="/visits"
+                onClick={handleMenuClick}
+                className={menuClass("/visits")}
+              >
+                <FaClipboardList className="text-base shrink-0" />
+                <span>Vet Visits</span>
+              </Link>
+            </>
+          )}
+
+          {/* Analytics Section */}
+          <div className="mt-3 mb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
             Analytics
           </div>
-        )}
 
-        <Link
-          to="/reports"
-          className={menuClass("/reports")}
-          title="Reports"
-        >
-          <FaChartBar className="text-lg shrink-0" />
-          {sidebarOpen && "Reports"}
-        </Link>
+          <Link
+            to="/reports"
+            onClick={handleMenuClick}
+            className={menuClass("/reports")}
+          >
+            <FaChartBar className="text-base shrink-0" />
+            <span>Reports</span>
+          </Link>
 
-        {/* Administration Section */}
-        {(role === "super_admin" || role === "admin") && (
-          <>
-            {sidebarOpen && (
-              <div className="mt-4 mb-1 px-4 text-xs font-bold uppercase tracking-wider text-gray-400">
+          {/* Administration Section */}
+          {(role === "super_admin" || role === "admin") && (
+            <>
+              <div className="mt-3 mb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Administration
               </div>
-            )}
 
-            <Link
-              to="/users"
-              className={menuClass("/users")}
-              title="Users"
-            >
-              <FaUserShield className="text-lg shrink-0" />
-              {sidebarOpen && "Users"}
-            </Link>
-          </>
-        )}
-      </nav>
+              <Link
+                to="/users"
+                onClick={handleMenuClick}
+                className={menuClass("/users")}
+              >
+                <FaUserShield className="text-base shrink-0" />
+                <span>Users</span>
+              </Link>
+            </>
+          )}
+        </nav>
 
-      {/* Footer / User Role Info */}
-      <div className="mt-auto border-t p-4">
-        {sidebarOpen ? (
-          <>
-            <div className="text-xs text-gray-500">Logged in as</div>
-            <div className="font-semibold capitalize text-emerald-700">
-              {role ? role.replace("_", " ") : "Guest"}
+        {/* Bottom Footer: User Name, Role & Logout */}
+        <div className="mt-auto border-t border-slate-200 p-3.5 bg-slate-50/70 space-y-3 shrink-0">
+          <div className="flex items-center gap-2.5 px-1">
+            <FaUserCircle className="text-emerald-600 text-3xl shrink-0" />
+            <div className="min-w-0">
+              <div className="font-semibold text-sm text-slate-800 truncate">
+                {userName || "User"}
+              </div>
+              <div className="text-xs text-emerald-700 font-medium capitalize truncate">
+                {role ? role.replaceAll("_", " ") : "Officer"}
+              </div>
             </div>
-          </>
-        ) : (
-          <FaUserShield
-            className="mx-auto text-xl text-gray-500"
-            title={`Logged in as: ${role || "Guest"}`}
-          />
-        )}
-      </div>
-    </aside>
+          </div>
+
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 active:scale-[0.99] text-white py-2 px-3 rounded-xl text-xs sm:text-sm font-medium shadow-sm transition"
+          >
+            <FaSignOutAlt />
+            <span>Logout</span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }

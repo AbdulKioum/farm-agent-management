@@ -7,7 +7,7 @@ import Navbar from "../components/common/Navbar";
 
 export default function MainLayout() {
   const { role, userName, email, loading } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (loading) {
     return (
@@ -39,8 +39,10 @@ export default function MainLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden">
+      
       <Sidebar
         role={role}
+        userName={userName}
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
       />

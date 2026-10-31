@@ -1,168 +1,63 @@
+import React from "react";
 import { useLocation } from "react-router-dom";
-
-import {
-  FaBell,
-  FaSignOutAlt,
-  FaUserCircle,
-} from "react-icons/fa";
-
-import { supabase } from "../../lib/supabase";
-
+import { FaBell, FaBars } from "react-icons/fa";
 
 export default function Navbar({
-  role,
-  userName,
+  sidebarOpen,
+  setSidebarOpen,
 }: {
-  role: string;
-  userName: string;
+  role?: string;
+  userName?: string;
   sidebarOpen: boolean;
   setSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
-  async function handleLogout() {
-    await supabase.auth.signOut();
+  const location = useLocation();
 
-    window.location.href =
-      "/login";
-  }
-
-
-  const location =
-  useLocation();
-
-const pageTitle =
-  location.pathname === "/"
-    ? "Dashboard"
-    : location.pathname
-        .replace("/", "")
-        .replace(
-          "-",
-          " "
-        )
-        .replace(
-          /\b\w/g,
-          (c) =>
-            c.toUpperCase()
-        );
-
-
+  const pageTitle =
+    location.pathname === "/"
+      ? "Dashboard"
+      : location.pathname
+          .replace("/", "")
+          .replaceAll("-", " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase());
 
   return (
-  <header className="sticky top-0 z-40 h-16 bg-white border-b shadow-sm flex items-center justify-between px-6">
+    <header className="sticky top-0 z-40 h-14 sm:h-16 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between px-4 sm:px-6">
+      {/* Left: Menu Toggle Icon + Page Title */}
+      <div className="flex items-center gap-3 min-w-0">
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-600 flex items-center justify-center transition active:scale-95 shrink-0"
+          aria-label="Toggle Menu"
+        >
+          <FaBars size={18} />
+        </button>
 
-    {/* Left */}
-
-    <div className="flex items-center gap-4">
-
-
-
-  <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
 
   <img
-    src="/logo.png"
+    src="/logo smart team.png"
     alt="FAMS Logo"
     className="w-12 h-12 object-contain"
   />
 
-  <div>
-
-    <h2 className="text-xl font-bold text-gray-800">
-      {pageTitle}
-    </h2>
-
-    <p className="text-xs text-gray-500 tracking-wide">
-  Farm & Agent Management System
-  <span className="ml-2 rounded bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
-    v1.0
-  </span>
-</p>
-
   </div>
 
-</div>
-
-</div>
-
-    {/* Right */}
-
-    <div className="flex items-center gap-5">
-
-      {/* Notification */}
-
-      <button
-        className="
-        relative
-        text-gray-500
-        hover:text-emerald-600
-        transition
-      "
-      >
-        <FaBell
-          size={20}
-        />
-
-        <span
-          className="
-          absolute
-          -top-1
-          -right-1
-          h-2
-          w-2
-          rounded-full
-          bg-red-500
-        "
-        />
-      </button>
-
-      {/* User */}
-
-      <div className="flex items-center gap-3">
-
-        <FaUserCircle
-          size={36}
-          className="text-emerald-600"
-        />
-
-        <div>
-
-          <div className="font-semibold leading-none">
-            {userName}
-          </div>
-
-          <div className="text-xs text-gray-500 capitalize">
-            {role.replace("_", " ")}
-          </div>
-
-        </div>
-
+        <h2 className="text-base sm:text-xl font-bold text-slate-800 truncate">
+          {pageTitle}
+        </h2>
       </div>
 
-      {/* Logout */}
-
-      <button
-        onClick={
-          handleLogout
-        }
-        className="
-        flex
-        items-center
-        gap-2
-        bg-red-500
-        hover:bg-red-600
-        text-white
-        px-4
-        py-2
-        rounded-lg
-        transition
-      "
-      >
-        <FaSignOutAlt />
-
-        Logout
-
-      </button>
-
-    </div>
-
-  </header>
-);
+      {/* Right: Notification Icon Only */}
+      <div className="flex items-center">
+        <button
+          className="relative w-10 h-10 rounded-xl hover:bg-slate-100 text-slate-600 hover:text-emerald-600 flex items-center justify-center transition"
+          aria-label="Notifications"
+        >
+          <FaBell size={19} />
+          <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
+        </button>
+      </div>
+    </header>
+  );
 }
