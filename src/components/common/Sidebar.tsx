@@ -49,7 +49,7 @@ export default function Sidebar({
 
   return (
     <>
-      {/* Backdrop Overlay (Baire click korle menu close hobe) */}
+      {/* Backdrop Overlay  */}
       {sidebarOpen && (
         <div
           onClick={() => setSidebarOpen(false)}
