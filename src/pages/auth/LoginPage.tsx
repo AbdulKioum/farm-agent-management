@@ -81,7 +81,7 @@ const from =
             <img
             src="/logo smart team.png"
             alt="Smart Team"
-            className="w-28 h-28 mx-auto mb-4"
+            className="w-28 mx-auto mb-4"
           />
           </div>
 
