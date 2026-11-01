@@ -141,6 +141,24 @@ export default function Sidebar({
                 <FaStore className="text-base shrink-0" />
                 <span>Retailers</span>
               </Link>
+
+              <Link
+                to="/doc-agents"
+                onClick={handleMenuClick}
+                className={menuClass("/doc-agents")}
+              >
+                <FaUsers className="text-base shrink-0" />
+                <span>DOC Agents</span>
+              </Link>
+
+              <Link
+                to="/doc-tracking"
+                onClick={handleMenuClick}
+                className={menuClass("/doc-tracking")}
+              >
+                <FaClipboardList className="text-base shrink-0" />
+                <span>DOC Tracking</span>
+              </Link>
             </>
           )}
 

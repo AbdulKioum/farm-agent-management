@@ -20,6 +20,8 @@ import VisitsPage from "../pages/visits/VisitsPage";
 import ReportsPage from "../pages/reports/ReportsPage";
 import UsersPage from "../pages/users/UsersPage";
 import FarmerStatusPage from "../pages/farmers/FarmerStatusPage";
+import DocAgentsPage from "../pages/doc/DocAgentsPage";
+import DocTrackingPage from "../pages/doc/DocTrackingPage";
 
 export default function AppRoutes() {
   const [loading, setLoading] = useState(true);
@@ -74,6 +76,8 @@ export default function AppRoutes() {
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/farmer-status" element={<FarmerStatusPage />} />
+          <Route path="/doc-agents" element={<DocAgentsPage />} />
+          <Route path="/doc-tracking" element={<DocTrackingPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

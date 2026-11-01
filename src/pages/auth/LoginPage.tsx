@@ -85,9 +85,9 @@ const from =
           />
           </div>
 
-          <h1 className="text-3xl font-bold text-slate-800">
+          <h3 className="text-3xl font-bold text-slate-800">
             Welcome
-          </h1>
+          </h3>
 
           
 
