@@ -97,110 +97,96 @@ export default function Sidebar({
             <span>Dashboard</span>
           </Link>
 
-          {/* Management Section */}
-          {(role === "super_admin" ||
-            role === "admin" ||
-            role === "manager") && (
-            <>
-              <div className="mt-3 mb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Management
-              </div>
+          {/* Management Section (Everyone sees, data filtered by upazila inside) */}
+          <div className="mt-3 mb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            Management
+          </div>
 
-              <Link
-                to="/companies"
-                onClick={handleMenuClick}
-                className={menuClass("/companies")}
-              >
-                <FaBuilding className="text-base shrink-0" />
-                <span>Companies</span>
-              </Link>
+          <Link
+            to="/companies"
+            onClick={handleMenuClick}
+            className={menuClass("/companies")}
+          >
+            <FaBuilding className="text-base shrink-0" />
+            <span>Companies</span>
+          </Link>
 
-              <Link
-                to="/agents"
-                onClick={handleMenuClick}
-                className={menuClass("/agents")}
-              >
-                <FaUsers className="text-base shrink-0" />
-                <span>Agents</span>
-              </Link>
+          <Link
+            to="/agents"
+            onClick={handleMenuClick}
+            className={menuClass("/agents")}
+          >
+            <FaUsers className="text-base shrink-0" />
+            <span>Agents</span>
+          </Link>
 
-              <Link
-                to="/sub-agents"
-                onClick={handleMenuClick}
-                className={menuClass("/sub-agents")}
-              >
-                <FaSitemap className="text-base shrink-0" />
-                <span>Sub Agents</span>
-              </Link>
+          <Link
+            to="/sub-agents"
+            onClick={handleMenuClick}
+            className={menuClass("/sub-agents")}
+          >
+            <FaSitemap className="text-base shrink-0" />
+            <span>Sub Agents</span>
+          </Link>
 
-              <Link
-                to="/retailers"
-                onClick={handleMenuClick}
-                className={menuClass("/retailers")}
-              >
-                <FaStore className="text-base shrink-0" />
-                <span>Retailers</span>
-              </Link>
+          <Link
+            to="/retailers"
+            onClick={handleMenuClick}
+            className={menuClass("/retailers")}
+          >
+            <FaStore className="text-base shrink-0" />
+            <span>Retailers</span>
+          </Link>
 
-              <Link
-                to="/doc-agents"
-                onClick={handleMenuClick}
-                className={menuClass("/doc-agents")}
-              >
-                <FaUsers className="text-base shrink-0" />
-                <span>DOC Agents</span>
-              </Link>
+          <Link
+            to="/doc-agents"
+            onClick={handleMenuClick}
+            className={menuClass("/doc-agents")}
+          >
+            <FaUsers className="text-base shrink-0" />
+            <span>DOC Agents</span>
+          </Link>
 
-              <Link
-                to="/doc-tracking"
-                onClick={handleMenuClick}
-                className={menuClass("/doc-tracking")}
-              >
-                <FaClipboardList className="text-base shrink-0" />
-                <span>DOC Tracking</span>
-              </Link>
-            </>
-          )}
+          <Link
+            to="/doc-tracking"
+            onClick={handleMenuClick}
+            className={menuClass("/doc-tracking")}
+          >
+            <FaClipboardList className="text-base shrink-0" />
+            <span>DOC Tracking</span>
+          </Link>
 
-          {/* Farmers & Visits */}
-          {(role === "super_admin" ||
-            role === "admin" ||
-            role === "manager" ||
-            role === "officer" ||
-            role === "agent") && (
-            <>
-              <div className="mt-3 mb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Field Operations
-              </div>
+          {/* Field Operations */}
+          <div className="mt-3 mb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            Field Operations
+          </div>
 
-              <Link
-                to="/farmers"
-                onClick={handleMenuClick}
-                className={menuClass("/farmers")}
-              >
-                <FaUserFriends className="text-base shrink-0" />
-                <span>Farmers</span>
-              </Link>
+          <Link
+            to="/farmers"
+            onClick={handleMenuClick}
+            className={menuClass("/farmers")}
+          >
+            <FaUserFriends className="text-base shrink-0" />
+            <span>Farmers</span>
+          </Link>
 
-              <Link
-                to="/farmer-status"
-                onClick={handleMenuClick}
-                className={menuClass("/farmer-status")}
-              >
-                <FaUserCheck className="text-base shrink-0" />
-                <span>Farmer Status</span>
-              </Link>
+          <Link
+            to="/farmer-status"
+            onClick={handleMenuClick}
+            className={menuClass("/farmer-status")}
+          >
+            <FaUserCheck className="text-base shrink-0" />
+            <span>Farmer Status</span>
+          </Link>
 
-              <Link
-                to="/visits"
-                onClick={handleMenuClick}
-                className={menuClass("/visits")}
-              >
-                <FaClipboardList className="text-base shrink-0" />
-                <span>Vet Visits</span>
-              </Link>
-            </>
-          )}
+          <Link
+            to="/visits"
+            onClick={handleMenuClick}
+            className={menuClass("/visits")}
+          >
+            <FaClipboardList className="text-base shrink-0" />
+            <span>Vet Visits</span>
+          </Link>
 
           {/* Analytics Section */}
           <div className="mt-3 mb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -216,8 +202,8 @@ export default function Sidebar({
             <span>Reports</span>
           </Link>
 
-          {/* Administration Section */}
-          {(role === "super_admin" || role === "admin") && (
+          {/* Administration Section (Only for super_admin) */}
+          {role === "super_admin" && (
             <>
               <div className="mt-3 mb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Administration

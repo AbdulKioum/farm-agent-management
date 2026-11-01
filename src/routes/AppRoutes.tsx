@@ -4,7 +4,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "../lib/supabase";
 
 import MainLayout from "../layouts/MainLayout";
@@ -14,7 +14,7 @@ import DashboardPage from "../pages/dashboard/DashboardPage";
 import CompaniesPage from "../pages/companies/CompaniesPage";
 import AgentsPage from "../pages/agents/AgentsPage";
 import SubAgentPage from "../pages/sub-agents/SubAgentPage";
-import RetailersPage from "../pages/retailers/RetailerPage"; 
+import RetailersPage from "../pages/retailers/RetailerPage";
 import FarmersPage from "../pages/farmers/FarmersPage";
 import VisitsPage from "../pages/visits/VisitsPage";
 import ReportsPage from "../pages/reports/ReportsPage";
@@ -26,18 +26,28 @@ import DocTrackingPage from "../pages/doc/DocTrackingPage";
 export default function AppRoutes() {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<any>(null);
+  const currentUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    supabase.auth
-      .getSession()
-      .then(({ data }) => {
-        setSession(data.session);
-        setLoading(false);
-      });
+    supabase.auth.getSession().then(({ data }) => {
+      currentUserIdRef.current = data.session?.user?.id || null;
+      setSession(data.session);
+      setLoading(false);
+    });
 
     const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
+      (event, newSession) => {
+        const newUserId = newSession?.user?.id || null;
+
+        // Browser minimize ba tab switch korle TOKEN_REFRESHED / SIGNED_IN fire hoy.
+        // Jodi aki user thake, tahole state update kore reload/re-render korbo na.
+        if (event === "SIGNED_OUT") {
+          currentUserIdRef.current = null;
+          setSession(null);
+        } else if (newUserId !== currentUserIdRef.current) {
+          currentUserIdRef.current = newUserId;
+          setSession(newSession);
+        }
       }
     );
 
@@ -45,7 +55,11 @@ export default function AppRoutes() {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-slate-500 text-sm">
+        Loading...
+      </div>
+    );
   }
 
   return (
@@ -66,11 +80,8 @@ export default function AppRoutes() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/companies" element={<CompaniesPage />} />
           <Route path="/agents" element={<AgentsPage />} />
-          
-          {/* New Routes Added */}
           <Route path="/sub-agents" element={<SubAgentPage />} />
-          <Route path="/retailers" element={<RetailersPage />} /> {/* ২. এই রুটটি যোগ করা হলো */}
-
+          <Route path="/retailers" element={<RetailersPage />} />
           <Route path="/farmers" element={<FarmersPage />} />
           <Route path="/visits" element={<VisitsPage />} />
           <Route path="/reports" element={<ReportsPage />} />

@@ -9,7 +9,7 @@ import {
   FaTrash,
   FaTimes,
   FaSpinner,
-
+  FaSyncAlt,
 } from "react-icons/fa";
 
 const FEED_COMPANIES = [
@@ -21,6 +21,10 @@ const FEED_COMPANIES = [
   "Amana",
   "Astha",
 ];
+
+// ==================================================
+// TYPES
+// ==================================================
 
 interface DocAgent {
   id: string;
@@ -56,30 +60,87 @@ interface DocTracking {
   qty: number;
   feed_company: string;
   remark: string;
+  created_by?: string;
+  tracked_by_name?: string;
 }
+
+interface OfficerRecord {
+  id: string;
+  full_name: string;
+  email: string;
+  role: string;
+  upazilas: string[];
+}
+
+// ==================================================
+// IN-MEMORY CACHE (Prevents reload on minimize/tab switch)
+// ==================================================
+let cachedPageState: {
+  initialized: boolean;
+  userId: string;
+  userName: string;
+  userRole: string;
+  assignedUpazilas: string[];
+  agents: DocAgent[];
+  supplies: DocSupply[];
+  trackings: DocTracking[];
+  officers: OfficerRecord[];
+  fromDate: string;
+  toDate: string;
+  monthFilter: string;
+} | null = null;
 
 export default function DocTrackingPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!cachedPageState?.initialized);
   const [importing, setImporting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
-  // User Role & Assigned Upazilas
-  const [userRole, setUserRole] = useState("officer");
-  const [assignedUpazilas, setAssignedUpazilas] = useState<string[]>([]);
+  // Current User Info
+  const [currentUserId, setCurrentUserId] = useState(
+    cachedPageState?.userId || ""
+  );
+  const [currentUserName, setCurrentUserName] = useState(
+    cachedPageState?.userName || "User"
+  );
+  const [userRole, setUserRole] = useState(
+    cachedPageState?.userRole || "officer"
+  );
+  const [assignedUpazilas, setAssignedUpazilas] = useState<string[]>(
+    cachedPageState?.assignedUpazilas || []
+  );
 
   // Data States
-  const [agents, setAgents] = useState<DocAgent[]>([]);
-  const [supplies, setSupplies] = useState<DocSupply[]>([]);
-  const [trackings, setTrackings] = useState<DocTracking[]>([]);
+  const [agents, setAgents] = useState<DocAgent[]>(
+    cachedPageState?.agents || []
+  );
+  const [supplies, setSupplies] = useState<DocSupply[]>(
+    cachedPageState?.supplies || []
+  );
+  const [trackings, setTrackings] = useState<DocTracking[]>(
+    cachedPageState?.trackings || []
+  );
+  const [officers, setOfficers] = useState<OfficerRecord[]>(
+    cachedPageState?.officers || []
+  );
 
-  // Top Filters
+  // Compact Filters (From Date, To Date, Month, DOC Type, Upazila, Officer, Search)
   const todayStr = new Date().toISOString().split("T")[0];
-  const [selectedDate, setSelectedDate] = useState<string>(""); // blank = all dates or auto-set to latest H.Date
+  const [fromDate, setFromDate] = useState<string>(
+    cachedPageState?.fromDate || ""
+  );
+  const [toDate, setToDate] = useState<string>(
+    cachedPageState?.toDate || ""
+  );
+  const [monthFilter, setMonthFilter] = useState<string>(
+    cachedPageState?.monthFilter || ""
+  );
   const [pcdFilter, setPcdFilter] = useState<string>("");
+  const [upazilaFilter, setUpazilaFilter] = useState<string>("");
+  const [officerFilter, setOfficerFilter] = useState<string>("");
   const [searchAgent, setSearchAgent] = useState<string>("");
 
   // Add Tracking Modal State
@@ -102,14 +163,22 @@ export default function DocTrackingPage() {
     remark: "",
   });
 
+  // Export Modal State (Multi-select DOC Type)
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportSelectedTypes, setExportSelectedTypes] = useState<string[]>([]);
+
   // Tracked Report Modal State
   const [isReportOpen, setIsReportOpen] = useState(false);
-  const [reportFromDate, setReportFromDate] = useState("");
-  const [reportToDate, setReportToDate] = useState("");
+  const [reportFromDate, setReportFromDate] = useState(todayStr);
+  const [reportToDate, setReportToDate] = useState(todayStr);
   const [reportPcdFilter, setReportPcdFilter] = useState("");
 
   useEffect(() => {
-    initTrackingPage();
+    // Jodi agey thekei cache kora thake, tahole minimize ba page switch korle reload hobe na
+    if (cachedPageState?.initialized) {
+      return;
+    }
+    initTrackingPage(true);
   }, []);
 
   function parseArray(field: any): string[] {
@@ -129,44 +198,71 @@ export default function DocTrackingPage() {
     return [];
   }
 
-  async function initTrackingPage() {
-    setLoading(true);
+  async function initTrackingPage(showSpinner = false) {
+    if (showSpinner) setLoading(true);
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
+      let uid = user?.id || "";
+      let uName = user?.email?.split("@")[0] || "Officer";
       let role = "officer";
       let uUpazilas: string[] = [];
 
       if (user) {
         const { data: profile } = await supabase
           .from("users")
-          .select("role, upazilas")
+          .select("id, full_name, email, role, upazilas")
           .eq("id", user.id)
           .single();
 
         if (profile) {
+          uName = profile.full_name || profile.email || uName;
           role = profile.role || "officer";
           uUpazilas = parseArray(profile.upazilas);
         }
       }
 
+      setCurrentUserId(uid);
+      setCurrentUserName(uName);
       setUserRole(role);
       setAssignedUpazilas(uUpazilas);
 
-      await loadAllData(role, uUpazilas);
+      await loadAllData(role, uUpazilas, uid, uName);
     } catch (err: any) {
       setErrorMsg(err?.message || "Failed to initialize page.");
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   }
 
-  async function loadAllData(role = userRole, uUpazilas = assignedUpazilas) {
-    // 1. Load DOC Agents for user's assigned upazilas
+  async function loadAllData(
+    role = userRole,
+    uUpazilas = assignedUpazilas,
+    uid = currentUserId,
+    uName = currentUserName
+  ) {
+    const isFullAccess = role === "super_admin" || role === "manager";
+
+    // 1. Load Users/Officers list
+    const { data: usersData } = await supabase
+      .from("users")
+      .select("id, full_name, email, role, upazilas")
+      .order("full_name");
+
+    const parsedOfficers: OfficerRecord[] = (usersData || []).map((u: any) => ({
+      id: u.id,
+      full_name: u.full_name || u.email || "Unnamed",
+      email: u.email || "",
+      role: u.role || "officer",
+      upazilas: parseArray(u.upazilas),
+    }));
+    setOfficers(parsedOfficers);
+
+    // 2. Load DOC Agents
     let agentQuery = supabase.from("doc_agents").select("*").order("doc_id");
-    if (role !== "super_admin") {
+    if (!isFullAccess) {
       if (uUpazilas.length > 0) {
         agentQuery = agentQuery.in("upazila", uUpazilas);
       } else {
@@ -190,7 +286,7 @@ export default function DocTrackingPage() {
       return;
     }
 
-    // 2. Load Supplies & Trackings matching those DOC.IDs
+    // 3. Load Supplies & Trackings matching those DOC.IDs
     const [{ data: supData, error: supErr }, { data: trkData, error: trkErr }] =
       await Promise.all([
         supabase
@@ -208,20 +304,47 @@ export default function DocTrackingPage() {
     if (supErr) throw supErr;
     if (trkErr) throw trkErr;
 
-    const loadedSupplies = supData || [];
-    setSupplies(loadedSupplies);
-    setTrackings(trkData || []);
+    const loadedSupplies: DocSupply[] = supData || [];
+    const loadedTrackings: DocTracking[] = (trkData || []).map((t: any) => {
+      let trackerName = t.tracked_by_name;
+      if (!trackerName && t.created_by) {
+        const foundOff = parsedOfficers.find((o) => o.id === t.created_by);
+        if (foundOff) trackerName = foundOff.full_name;
+      }
+      return {
+        ...t,
+        tracked_by_name: trackerName || "-",
+      };
+    });
 
-    // Set default date filters if not set yet
-    if (loadedSupplies.length > 0 && !selectedDate) {
-      const latestDate = loadedSupplies[0].h_date;
-      setSelectedDate(latestDate);
-      setReportFromDate(latestDate);
-      setReportToDate(latestDate);
-    } else if (!reportFromDate) {
-      setReportFromDate(todayStr);
-      setReportToDate(todayStr);
+    setSupplies(loadedSupplies);
+    setTrackings(loadedTrackings);
+
+    let defFrom = fromDate;
+    let defTo = toDate;
+    if (loadedSupplies.length > 0 && !defFrom && !defTo && !monthFilter) {
+      defFrom = loadedSupplies[0].h_date;
+      defTo = loadedSupplies[0].h_date;
+      setFromDate(defFrom);
+      setToDate(defTo);
+      setReportFromDate(defFrom);
+      setReportToDate(defTo);
     }
+
+    cachedPageState = {
+      initialized: true,
+      userId: uid,
+      userName: uName,
+      userRole: role,
+      assignedUpazilas: uUpazilas,
+      agents: loadedAgents,
+      supplies: loadedSupplies,
+      trackings: loadedTrackings,
+      officers: parsedOfficers,
+      fromDate: defFrom,
+      toDate: defTo,
+      monthFilter,
+    };
   }
 
   // ==================================================
@@ -230,16 +353,12 @@ export default function DocTrackingPage() {
 
   function extractCleanDocId(rawVal: any): string {
     if (rawVal === null || rawVal === undefined) return "";
-    const str = String(rawVal);
-    // Strip any HTML tags like <div class="green-background no-parent-padding">1059</div>
-    const withoutTags = str.replace(/<[^>]*>/g, "").trim();
-    return withoutTags;
+    return String(rawVal).replace(/<[^>]*>/g, "").trim();
   }
 
   function parseExcelDate(rawDate: any): string {
     if (!rawDate) return todayStr;
 
-    // Excel serial number (e.g. 46023)
     if (typeof rawDate === "number") {
       const utcDays = Math.floor(rawDate - 25569);
       const dateObj = new Date(utcDays * 86400 * 1000);
@@ -248,8 +367,9 @@ export default function DocTrackingPage() {
 
     const str = String(rawDate).replace(/<[^>]*>/g, "").trim();
 
-    // Check DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY
-    const dmyMatch = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
+    const dmyMatch = str.match(
+      /^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/
+    );
     if (dmyMatch) {
       const day = dmyMatch[1].padStart(2, "0");
       const month = dmyMatch[2].padStart(2, "0");
@@ -270,7 +390,8 @@ export default function DocTrackingPage() {
   // IMPORT EXCEL (Only Super Admin & Manager)
   // ==================================================
 
-  const canImportExcel = userRole === "super_admin" || userRole === "manager";
+  const isManagerOrAdmin =
+    userRole === "super_admin" || userRole === "manager";
 
   async function handleExcelUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -291,7 +412,6 @@ export default function DocTrackingPage() {
         throw new Error("The selected Excel file is empty.");
       }
 
-      // Map rows & ignore Region, Disctrict, TP
       const groupedMap = new Map<
         string,
         {
@@ -307,7 +427,6 @@ export default function DocTrackingPage() {
       >();
 
       for (const row of rows) {
-        // Normalize column keys (handle spaces/dots)
         const getVal = (possibleKeys: string[]) => {
           for (const k of Object.keys(row)) {
             const cleanKey = k.trim().toLowerCase();
@@ -380,31 +499,36 @@ export default function DocTrackingPage() {
         );
       }
 
-      // Upsert into doc_supplies
-      const { error } = await supabase.from("doc_supplies").upsert(payload, {
-        onConflict: "h_date,doc_id,pcd,ag_b",
-      });
+      const importedDates = Array.from(new Set(payload.map((p) => p.h_date)));
+      const importedDocIds = Array.from(new Set(payload.map((p) => p.doc_id)));
 
-      if (error) {
-        // Fallback if unique index differs: delete matching h_date+doc_id and insert
-        const dates = Array.from(new Set(payload.map((p) => p.h_date)));
-        const docIds = Array.from(new Set(payload.map((p) => p.doc_id)));
-        await supabase
-          .from("doc_supplies")
-          .delete()
-          .in("h_date", dates)
-          .in("doc_id", docIds);
+      await supabase
+        .from("doc_supplies")
+        .delete()
+        .in("h_date", importedDates)
+        .in("doc_id", importedDocIds);
 
-        const { error: insErr } = await supabase
-          .from("doc_supplies")
-          .insert(payload);
-        if (insErr) throw insErr;
+      const { error: insErr } = await supabase
+        .from("doc_supplies")
+        .insert(payload);
+
+      if (insErr) throw insErr;
+
+      const importedDate = payload[0]?.h_date;
+      if (importedDate) {
+        setFromDate(importedDate);
+        setToDate(importedDate);
+        setMonthFilter("");
+        if (cachedPageState) {
+          cachedPageState.fromDate = importedDate;
+          cachedPageState.toDate = importedDate;
+          cachedPageState.monthFilter = "";
+        }
       }
 
-      setSuccessMsg(`Successfully imported ${payload.length} DOC supply rows!`);
-      if (payload[0]?.h_date) {
-        setSelectedDate(payload[0].h_date);
-      }
+      setSuccessMsg(
+        `Imported ${payload.length} DOC supply rows for H.Date: ${importedDate}!`
+      );
       await loadAllData();
     } catch (err: any) {
       setErrorMsg(err?.message || "Failed to import Excel file.");
@@ -452,22 +576,32 @@ export default function DocTrackingPage() {
     setErrorMsg("");
 
     try {
-      const { error } = await supabase.from("doc_trackings").insert([
-        {
-          supply_id: activeTarget.supply_id || null,
-          doc_id: activeTarget.doc_id,
-          h_date: activeTarget.h_date,
-          pcd: activeTarget.pcd,
-          farmer_name: trackForm.farmer_name.trim(),
-          address: trackForm.address.trim(),
-          mobile: trackForm.mobile.trim(),
-          qty: numQty,
-          feed_company: trackForm.feed_company,
-          remark: trackForm.remark.trim(),
-        },
-      ]);
+      const insertPayload: Record<string, any> = {
+        supply_id: activeTarget.supply_id || null,
+        doc_id: activeTarget.doc_id,
+        h_date: activeTarget.h_date,
+        pcd: activeTarget.pcd,
+        farmer_name: trackForm.farmer_name.trim(),
+        address: trackForm.address.trim(),
+        mobile: trackForm.mobile.trim(),
+        qty: numQty,
+        feed_company: trackForm.feed_company,
+        remark: trackForm.remark.trim(),
+        created_by: currentUserId || null,
+        tracked_by_name: currentUserName,
+      };
 
-      if (error) throw error;
+      const { error } = await supabase
+        .from("doc_trackings")
+        .insert([insertPayload]);
+
+      if (error) {
+        delete insertPayload.tracked_by_name;
+        const { error: retryErr } = await supabase
+          .from("doc_trackings")
+          .insert([insertPayload]);
+        if (retryErr) throw retryErr;
+      }
 
       await loadAllData();
       setIsTrackModalOpen(false);
@@ -493,25 +627,108 @@ export default function DocTrackingPage() {
   }
 
   // ==================================================
-  // FILTERED DATA & TOP SUMMARY CALCULATIONS
+  // FILTERED DATA (From Date, To Date, Month, DOC Type, Upazila, Officer, Search)
   // ==================================================
 
   const allPcdTypes = Array.from(new Set(supplies.map((s) => s.pcd))).sort();
-  const allDates = Array.from(new Set(supplies.map((s) => s.h_date)))
+  const allUpazilas = Array.from(new Set(agents.map((a) => a.upazila))).sort();
+
+  const allMonths = Array.from(
+    new Set(supplies.map((s) => s.h_date.slice(0, 7)))
+  )
     .sort()
     .reverse();
 
+  function formatMonthLabel(ym: string) {
+    const [year, month] = ym.split("-");
+    const date = new Date(Number(year), Number(month) - 1, 1);
+    return date.toLocaleString("en-US", { month: "short", year: "numeric" });
+  }
+
+  function handleMonthChange(ym: string) {
+    setMonthFilter(ym);
+    if (!ym) {
+      setFromDate("");
+      setToDate("");
+      if (cachedPageState) {
+        cachedPageState.monthFilter = "";
+        cachedPageState.fromDate = "";
+        cachedPageState.toDate = "";
+      }
+      return;
+    }
+    const [y, m] = ym.split("-").map(Number);
+    const firstDay = `${ym}-01`;
+    const lastDayNum = new Date(y, m, 0).getDate();
+    const lastDay = `${ym}-${String(lastDayNum).padStart(2, "0")}`;
+
+    setFromDate(firstDay);
+    setToDate(lastDay);
+    if (cachedPageState) {
+      cachedPageState.monthFilter = ym;
+      cachedPageState.fromDate = firstDay;
+      cachedPageState.toDate = lastDay;
+    }
+  }
+
+  function matchesDateFilter(hDate: string) {
+    if (monthFilter && !hDate.startsWith(monthFilter)) return false;
+    if (fromDate && hDate < fromDate) return false;
+    if (toDate && hDate > toDate) return false;
+    return true;
+  }
+
+  const matchingAgents = agents.filter((agent) => {
+    if (upazilaFilter && agent.upazila !== upazilaFilter) return false;
+
+    if (officerFilter) {
+      const selectedOff = officers.find((o) => o.id === officerFilter);
+      if (selectedOff && !selectedOff.upazilas.includes(agent.upazila)) {
+        return false;
+      }
+    }
+
+    const q = searchAgent.trim().toLowerCase();
+    if (q) {
+      const matchSearch =
+        agent.doc_id.toLowerCase().includes(q) ||
+        agent.agent_name.toLowerCase().includes(q);
+      if (!matchSearch) return false;
+    }
+
+    return true;
+  });
+
+  const matchingAgentDocIds = new Set(matchingAgents.map((a) => a.doc_id));
+
   const filteredSupplies = supplies.filter((s) => {
-    const matchDate = !selectedDate || s.h_date === selectedDate;
+    if (!matchingAgentDocIds.has(s.doc_id)) return false;
     const matchPcd = !pcdFilter || s.pcd === pcdFilter;
-    return matchDate && matchPcd;
+    return matchesDateFilter(s.h_date) && matchPcd;
   });
 
   const filteredTrackings = trackings.filter((t) => {
-    const matchDate = !selectedDate || t.h_date === selectedDate;
+    if (!matchingAgentDocIds.has(t.doc_id)) return false;
     const matchPcd = !pcdFilter || t.pcd === pcdFilter;
-    return matchDate && matchPcd;
+    return matchesDateFilter(t.h_date) && matchPcd;
   });
+
+  const visibleAgents = matchingAgents.filter((agent) =>
+    filteredSupplies.some((s) => s.doc_id === agent.doc_id)
+  );
+
+  const dateRangeLabel =
+    fromDate && toDate
+      ? fromDate === toDate
+        ? fromDate
+        : `${fromDate} to ${toDate}`
+      : fromDate
+      ? `From ${fromDate}`
+      : toDate
+      ? `Up to ${toDate}`
+      : monthFilter
+      ? formatMonthLabel(monthFilter)
+      : "All Dates";
 
   const totalSupplyQty = filteredSupplies.reduce(
     (sum, s) => sum + (Number(s.qty) || 0),
@@ -532,40 +749,37 @@ export default function DocTrackingPage() {
       ? ((totalUntrackedQty / totalSupplyQty) * 100).toFixed(1)
       : "0.0";
 
-  // Filter agents that have supplies in current filter (or match search)
-  const visibleAgents = agents.filter((agent) => {
-    const q = searchAgent.trim().toLowerCase();
-    const matchSearch =
-      !q ||
-      agent.doc_id.toLowerCase().includes(q) ||
-      agent.agent_name.toLowerCase().includes(q) ||
-      agent.upazila.toLowerCase().includes(q);
+  // ==================================================
+  // MULTI-SELECT DOC TYPE EXCEL EXPORT
+  // ==================================================
 
-    if (!matchSearch) return false;
+  function openExportModal() {
+    setExportSelectedTypes(pcdFilter ? [pcdFilter] : [...allPcdTypes]);
+    setIsExportModalOpen(true);
+  }
 
-    const agentSupplies = filteredSupplies.filter(
-      (s) => s.doc_id === agent.doc_id
+  function toggleExportDocType(type: string) {
+    setExportSelectedTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     );
-    return agentSupplies.length > 0;
-  });
+  }
 
-  // ==================================================
-  // EXPORT EXCEL
-  // ==================================================
-  // Columns: H.Date, DOC.ID, Agent, Address, DOC qty, DOC Type, Farmer, Address, DOC Qty, Feed Company, Remark
+  function handleExportExcel() {
+    if (exportSelectedTypes.length === 0) {
+      alert("Please select at least one DOC Type to export.");
+      return;
+    }
 
-function handleExportExcel() {
     const exportRows: Record<string, any>[] = [];
-
     let grandTotalSupply = 0;
     let grandTotalTracked = 0;
 
     visibleAgents.forEach((agent) => {
       const agentSupplies = filteredSupplies.filter(
-        (s) => s.doc_id === agent.doc_id
+        (s) =>
+          s.doc_id === agent.doc_id && exportSelectedTypes.includes(s.pcd)
       );
 
-      // Group by H.Date + PCD
       const groups = new Map<
         string,
         { h_date: string; pcd: string; qty: number }
@@ -607,6 +821,7 @@ function handleExportExcel() {
             "Farmer Mobile": "-",
             "Tracked Qty": 0,
             "Feed Company": "-",
+            "Tracked By": "-",
             Remark: "Untracked",
           });
         } else {
@@ -618,7 +833,6 @@ function handleExportExcel() {
               "DOC.ID": agent.doc_id,
               Agent: agent.agent_name,
               "Agent Address": `${agent.upazila}, ${agent.district}`,
-              // Ek-i agent er ekadhik farmer thakle prothom row te supply qty dekhabe
               "DOC Qty": index === 0 ? g.qty : "",
               "DOC Type": g.pcd,
               Farmer: t.farmer_name,
@@ -626,6 +840,7 @@ function handleExportExcel() {
               "Farmer Mobile": t.mobile || "-",
               "Tracked Qty": Number(t.qty) || 0,
               "Feed Company": t.feed_company,
+              "Tracked By": t.tracked_by_name || "-",
               Remark: t.remark || "-",
             });
           });
@@ -634,11 +849,10 @@ function handleExportExcel() {
     });
 
     if (exportRows.length === 0) {
-      alert("No tracking data available to export for current filter.");
+      alert("No tracking data found for the selected DOC Type(s).");
       return;
     }
 
-    // Add Grand Total Row at the bottom
     exportRows.push({
       "H.Date": "TOTAL",
       "DOC.ID": "",
@@ -651,35 +865,32 @@ function handleExportExcel() {
       "Farmer Mobile": "",
       "Tracked Qty": grandTotalTracked,
       "Feed Company": "",
+      "Tracked By": "",
       Remark: `Untracked: ${Math.max(0, grandTotalSupply - grandTotalTracked)}`,
     });
 
-    // Create Worksheet
     const worksheet = XLSX.utils.json_to_sheet(exportRows);
 
-    // 1. Auto-fit Column Widths (Jeno kono lekha kete na jay)
     const headers = Object.keys(exportRows[0]);
-    const colWidths = headers.map((header) => {
+    worksheet["!cols"] = headers.map((header) => {
       let maxLen = header.length;
       exportRows.forEach((row) => {
-        const val = row[header] !== undefined && row[header] !== null ? String(row[header]) : "";
-        if (val.length > maxLen) {
-          maxLen = val.length;
-        }
+        const val =
+          row[header] !== undefined && row[header] !== null
+            ? String(row[header])
+            : "";
+        if (val.length > maxLen) maxLen = val.length;
       });
-      return { wch: Math.max(maxLen + 5, 12) }; // Extra 5 characters padding
+      return { wch: Math.max(maxLen + 5, 12) };
     });
-    worksheet["!cols"] = colWidths;
 
-    // 2. Row Heights (Header ebong data row-gulo ektu faka o sundor korar jonno)
     worksheet["!rows"] = exportRows.map((_, idx) => ({
       hpt: idx === 0 ? 26 : 20,
     }));
-    worksheet["!rows"].unshift({ hpt: 28 }); // Header row height
+    worksheet["!rows"].unshift({ hpt: 28 });
 
-    // 3. Apply Cell Borders, Colors & Alignment
-    const range = XLSX.utils.decode_range(worksheet["!ref"] || "A1:L1");
-    const totalRowIndex = range.e.r; // Last row index
+    const range = XLSX.utils.decode_range(worksheet["!ref"] || "A1:M1");
+    const totalRowIndex = range.e.r;
 
     const borderStyle = {
       top: { style: "thin", color: { rgb: "CBD5E1" } },
@@ -695,35 +906,50 @@ function handleExportExcel() {
 
         const isHeader = R === 0;
         const isTotalRow = R === totalRowIndex;
-        const isCenterCol = [0, 1, 5, 8, 10].includes(C); // Date, ID, Type, Mobile, Feed
-        const isNumberCol = [4, 9].includes(C); // DOC Qty, Tracked Qty
+        const isCenterCol = [0, 1, 5, 8, 10].includes(C);
+        const isNumberCol = [4, 9].includes(C);
 
         if (isHeader) {
-          // Dark Emerald Header with White Bold Text
           worksheet[cellRef].s = {
-            fill: { fgColor: { rgb: "047857" } },
-            font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "FFFFFF" } },
-            alignment: { horizontal: "center", vertical: "center", wrapText: true },
+            fill: { fgColor: { rgb: "334155" } },
+            font: {
+              name: "Calibri",
+              sz: 11,
+              bold: true,
+              color: { rgb: "FFFFFF" },
+            },
+            alignment: {
+              horizontal: "center",
+              vertical: "center",
+              wrapText: true,
+            },
             border: borderStyle,
           };
         } else if (isTotalRow) {
-          // Bottom Total Row Styling
           worksheet[cellRef].s = {
-            fill: { fgColor: { rgb: "ECFDF5" } },
-            font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "065F46" } },
+            fill: { fgColor: { rgb: "F1F5F9" } },
+            font: {
+              name: "Calibri",
+              sz: 11,
+              bold: true,
+              color: { rgb: "0F172A" },
+            },
             alignment: {
-              horizontal: isNumberCol ? "right" : isCenterCol ? "center" : "left",
+              horizontal: isNumberCol
+                ? "right"
+                : isCenterCol
+                ? "center"
+                : "left",
               vertical: "center",
             },
             border: {
-              top: { style: "medium", color: { rgb: "059669" } },
-              bottom: { style: "double", color: { rgb: "059669" } },
+              top: { style: "medium", color: { rgb: "475569" } },
+              bottom: { style: "double", color: { rgb: "475569" } },
               left: { style: "thin", color: { rgb: "CBD5E1" } },
               right: { style: "thin", color: { rgb: "CBD5E1" } },
             },
           };
         } else {
-          // Regular Data Rows (Zebra Striping + Clean Borders)
           const isEvenRow = R % 2 === 0;
           const isUntracked = worksheet[cellRef].v === "Untracked";
 
@@ -736,7 +962,11 @@ function handleExportExcel() {
               color: { rgb: isUntracked ? "D97706" : "1E293B" },
             },
             alignment: {
-              horizontal: isNumberCol ? "right" : isCenterCol ? "center" : "left",
+              horizontal: isNumberCol
+                ? "right"
+                : isCenterCol
+                ? "center"
+                : "left",
               vertical: "center",
               wrapText: true,
             },
@@ -750,8 +980,9 @@ function handleExportExcel() {
     XLSX.utils.book_append_sheet(workbook, worksheet, "DOC_Tracking");
     XLSX.writeFile(
       workbook,
-      `DOC_Tracking_${selectedDate || "All_Dates"}.xlsx`
+      `DOC_Tracking_${dateRangeLabel}_${exportSelectedTypes.join("-")}.xlsx`
     );
+    setIsExportModalOpen(false);
   }
 
   // ==================================================
@@ -759,6 +990,7 @@ function handleExportExcel() {
   // ==================================================
 
   const reportSupplies = supplies.filter((s) => {
+    if (!matchingAgentDocIds.has(s.doc_id)) return false;
     const matchFrom = !reportFromDate || s.h_date >= reportFromDate;
     const matchTo = !reportToDate || s.h_date <= reportToDate;
     const matchPcd = !reportPcdFilter || s.pcd === reportPcdFilter;
@@ -766,6 +998,7 @@ function handleExportExcel() {
   });
 
   const reportTrackings = trackings.filter((t) => {
+    if (!matchingAgentDocIds.has(t.doc_id)) return false;
     const matchFrom = !reportFromDate || t.h_date >= reportFromDate;
     const matchTo = !reportToDate || t.h_date <= reportToDate;
     const matchPcd = !reportPcdFilter || t.pcd === reportPcdFilter;
@@ -782,13 +1015,14 @@ function handleExportExcel() {
   );
   const repTotalUntracked = Math.max(0, repTotalDoc - repTotalTracked);
   const repTrackedPct =
-    repTotalDoc > 0 ? ((repTotalTracked / repTotalDoc) * 100).toFixed(1) : "0.0";
+    repTotalDoc > 0
+      ? ((repTotalTracked / repTotalDoc) * 100).toFixed(1)
+      : "0.0";
   const repUntrackedPct =
     repTotalDoc > 0
       ? ((repTotalUntracked / repTotalDoc) * 100).toFixed(1)
       : "0.0";
 
-  // Feed Company Wise Breakdown
   const companyBreakdown = FEED_COMPANIES.map((comp) => {
     const compQty = reportTrackings
       .filter((t) => t.feed_company.toLowerCase() === comp.toLowerCase())
@@ -801,18 +1035,13 @@ function handleExportExcel() {
     const pctOfTotal =
       repTotalDoc > 0 ? ((compQty / repTotalDoc) * 100).toFixed(1) : "0.0";
 
-    return {
-      company: comp,
-      qty: compQty,
-      pctOfTracked,
-      pctOfTotal,
-    };
+    return { company: comp, qty: compQty, pctOfTracked, pctOfTotal };
   });
 
-  // DOC Type (PCD) Wise Breakdown
   const pcdBreakdown = allPcdTypes.map((pcd) => {
     const supQty = supplies
       .filter((s) => {
+        if (!matchingAgentDocIds.has(s.doc_id)) return false;
         const matchFrom = !reportFromDate || s.h_date >= reportFromDate;
         const matchTo = !reportToDate || s.h_date <= reportToDate;
         return matchFrom && matchTo && s.pcd === pcd;
@@ -821,6 +1050,7 @@ function handleExportExcel() {
 
     const trkQty = trackings
       .filter((t) => {
+        if (!matchingAgentDocIds.has(t.doc_id)) return false;
         const matchFrom = !reportFromDate || t.h_date >= reportFromDate;
         const matchTo = !reportToDate || t.h_date <= reportToDate;
         return matchFrom && matchTo && t.pcd === pcd;
@@ -834,26 +1064,50 @@ function handleExportExcel() {
   });
 
   return (
-    <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto space-y-4">
+    <div className="p-2.5 sm:p-4 max-w-7xl mx-auto space-y-3">
       {/* ==================================================
-          TOP BAR: TITLE & ACTION BUTTONS
+          COMPACT HEADER: STATS BADGES + ACTION BUTTONS
       ================================================== */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-lg sm:text-xl font-bold text-slate-800">
-            DOC Tracking
-          </h1>
-          <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium">
-            Date:{" "}
-            <strong className="text-emerald-700">
-              {selectedDate || "All Dates"}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2.5 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 shadow-sm">
+        {/* Inline Compact Summary Pills */}
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium">
+            Date: <strong className="text-slate-900">{dateRangeLabel}</strong>
+          </span>
+
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium">
+            Total DOC:{" "}
+            <strong className="text-slate-900">
+              {totalSupplyQty.toLocaleString()}
+            </strong>
+          </span>
+
+          <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium">
+            Tracked:{" "}
+            <strong>
+              {totalTrackedQty.toLocaleString()} ({trackedPercent}%)
+            </strong>
+          </span>
+
+          <span className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium">
+            Untracked:{" "}
+            <strong>
+              {totalUntrackedQty.toLocaleString()} ({untrackedPercent}%)
             </strong>
           </span>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2">
-          {canImportExcel && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button
+            onClick={() => initTrackingPage(true)}
+            title="Refresh Data"
+            className="p-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs transition"
+          >
+            <FaSyncAlt className={loading ? "animate-spin" : ""} />
+          </button>
+
+          {isManagerOrAdmin && (
             <>
               <input
                 ref={fileInputRef}
@@ -865,7 +1119,7 @@ function handleExportExcel() {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={importing}
-                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium shadow-sm transition"
+                className="inline-flex items-center gap-1.5 bg-slate-700 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition"
               >
                 {importing ? (
                   <FaSpinner className="animate-spin" />
@@ -878,8 +1132,8 @@ function handleExportExcel() {
           )}
 
           <button
-            onClick={handleExportExcel}
-            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium shadow-sm transition"
+            onClick={openExportModal}
+            className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition"
           >
             <FaFileExcel />
             Export Excel
@@ -887,7 +1141,7 @@ function handleExportExcel() {
 
           <button
             onClick={() => setIsReportOpen(true)}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium shadow-sm transition"
+            className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition"
           >
             <FaChartPie />
             Tracked Report
@@ -896,10 +1150,132 @@ function handleExportExcel() {
       </div>
 
       {/* ==================================================
+          COMPACT FILTER BAR (From Date, To Date, Month, DOC Type, Upazila, Officer, Search)
+      ================================================== */}
+      <div className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-sm">
+        <div
+          className={`grid grid-cols-2 sm:grid-cols-3 ${
+            isManagerOrAdmin ? "lg:grid-cols-7" : "lg:grid-cols-5"
+          } gap-2`}
+        >
+          {/* From Date */}
+          <div className="flex items-center border border-slate-300 rounded-lg px-2 py-1 bg-white focus-within:border-emerald-500">
+            <span className="text-[10px] font-semibold text-slate-400 mr-1.5 shrink-0">
+              From:
+            </span>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => {
+                setFromDate(e.target.value);
+                setMonthFilter("");
+                if (cachedPageState) {
+                  cachedPageState.fromDate = e.target.value;
+                  cachedPageState.monthFilter = "";
+                }
+              }}
+              className="w-full text-xs outline-none bg-transparent text-slate-700"
+            />
+          </div>
+
+          {/* To Date */}
+          <div className="flex items-center border border-slate-300 rounded-lg px-2 py-1 bg-white focus-within:border-emerald-500">
+            <span className="text-[10px] font-semibold text-slate-400 mr-1.5 shrink-0">
+              To:
+            </span>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => {
+                setToDate(e.target.value);
+                setMonthFilter("");
+                if (cachedPageState) {
+                  cachedPageState.toDate = e.target.value;
+                  cachedPageState.monthFilter = "";
+                }
+              }}
+              className="w-full text-xs outline-none bg-transparent text-slate-700"
+            />
+          </div>
+
+          {/* Month Filter */}
+          <select
+            value={monthFilter}
+            onChange={(e) => handleMonthChange(e.target.value)}
+            className="border border-slate-300 rounded-lg px-2 py-1.5 text-xs bg-white outline-none focus:border-emerald-500"
+          >
+            <option value="">All Months</option>
+            {allMonths.map((ym) => (
+              <option key={ym} value={ym}>
+                Month: {formatMonthLabel(ym)}
+              </option>
+            ))}
+          </select>
+
+          {/* DOC Type Filter */}
+          <select
+            value={pcdFilter}
+            onChange={(e) => setPcdFilter(e.target.value)}
+            className="border border-slate-300 rounded-lg px-2 py-1.5 text-xs bg-white outline-none focus:border-emerald-500"
+          >
+            <option value="">All DOC Types</option>
+            {allPcdTypes.map((pcd) => (
+              <option key={pcd} value={pcd}>
+                DOC Type: {pcd}
+              </option>
+            ))}
+          </select>
+
+          {/* Upazila Filter (Super Admin & Manager) */}
+          {isManagerOrAdmin && (
+            <select
+              value={upazilaFilter}
+              onChange={(e) => setUpazilaFilter(e.target.value)}
+              className="border border-slate-300 rounded-lg px-2 py-1.5 text-xs bg-white outline-none focus:border-emerald-500"
+            >
+              <option value="">All Upazilas</option>
+              {allUpazilas.map((u) => (
+                <option key={u} value={u}>
+                  Upazila: {u}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {/* Officer Filter (Super Admin & Manager) */}
+          {isManagerOrAdmin && (
+            <select
+              value={officerFilter}
+              onChange={(e) => setOfficerFilter(e.target.value)}
+              className="border border-slate-300 rounded-lg px-2 py-1.5 text-xs bg-white outline-none focus:border-emerald-500"
+            >
+              <option value="">All Officers</option>
+              {officers
+                .filter((o) => o.upazilas.length > 0)
+                .map((off) => (
+                  <option key={off.id} value={off.id}>
+                    Officer: {off.full_name}
+                  </option>
+                ))}
+            </select>
+          )}
+
+          {/* Quick Agent Search */}
+          <input
+            type="text"
+            placeholder="Search ID or Agent..."
+            value={searchAgent}
+            onChange={(e) => setSearchAgent(e.target.value)}
+            className="col-span-2 sm:col-span-1 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs outline-none focus:border-emerald-500"
+          />
+        </div>
+      </div>
+
+      {/* ==================================================
           ALERTS
       ================================================== */}
       {errorMsg && (
-        <div className="flex items-center justify-between bg-red-50 border border-red-200 text-red-700 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm">
+        <div className="flex items-center justify-between bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-xl text-xs">
           <span>{errorMsg}</span>
           <button onClick={() => setErrorMsg("")}>
             <FaTimes />
@@ -908,7 +1284,7 @@ function handleExportExcel() {
       )}
 
       {successMsg && (
-        <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 text-emerald-700 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm">
+        <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-2 rounded-xl text-xs">
           <span>{successMsg}</span>
           <button onClick={() => setSuccessMsg("")}>
             <FaTimes />
@@ -917,117 +1293,29 @@ function handleExportExcel() {
       )}
 
       {/* ==================================================
-          TOP SUMMARY STATS & FILTERS BAR
-      ================================================== */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 shadow-sm space-y-3">
-        {/* Compact Stats Row */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-4">
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-center sm:text-left">
-            <p className="text-[11px] sm:text-xs text-slate-500">Total DOC</p>
-            <p className="text-base sm:text-xl font-bold text-slate-800">
-              {totalSupplyQty.toLocaleString()}
-            </p>
-          </div>
-
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 sm:p-3 text-center sm:text-left">
-            <p className="text-[11px] sm:text-xs text-emerald-700">Tracked</p>
-            <p className="text-base sm:text-xl font-bold text-emerald-700">
-              {totalTrackedQty.toLocaleString()}{" "}
-              <span className="text-xs font-semibold">({trackedPercent}%)</span>
-            </p>
-          </div>
-
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 sm:p-3 text-center sm:text-left">
-            <p className="text-[11px] sm:text-xs text-amber-700">Untracked</p>
-            <p className="text-base sm:text-xl font-bold text-amber-700">
-              {totalUntrackedQty.toLocaleString()}{" "}
-              <span className="text-xs font-semibold">
-                ({untrackedPercent}%)
-              </span>
-            </p>
-          </div>
-        </div>
-
-        {/* Filters Row: Date, PCD Filter, Agent Search */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
-          <div>
-            <label className="block text-[11px] font-semibold text-slate-500 mb-1">
-              H.Date Filter
-            </label>
-            <select
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full border border-slate-300 rounded-xl px-2.5 py-2 text-xs sm:text-sm bg-white outline-none focus:border-emerald-500"
-            >
-              <option value="">All Dates</option>
-              {allDates.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-semibold text-slate-500 mb-1">
-              PCD (DOC Type) Filter
-            </label>
-            <select
-              value={pcdFilter}
-              onChange={(e) => setPcdFilter(e.target.value)}
-              className="w-full border border-slate-300 rounded-xl px-2.5 py-2 text-xs sm:text-sm bg-white outline-none focus:border-emerald-500"
-            >
-              <option value="">All PCD Types</option>
-              {allPcdTypes.map((pcd) => (
-                <option key={pcd} value={pcd}>
-                  {pcd}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="col-span-2 sm:col-span-1">
-            <label className="block text-[11px] font-semibold text-slate-500 mb-1">
-              Search Agent / DOC.ID
-            </label>
-            <input
-              type="text"
-              placeholder="Search DOC.ID or Agent..."
-              value={searchAgent}
-              onChange={(e) => setSearchAgent(e.target.value)}
-              className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none focus:border-emerald-500"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* ==================================================
-          AGENT-WISE CARDS & PCD-WISE TABLES
+          AGENT-WISE CARDS (Light Ash/Gray Header, ID & Name Only)
       ================================================== */}
       {loading ? (
-        <div className="bg-white border border-slate-200 rounded-2xl py-12 text-center text-slate-500 text-sm">
+        <div className="bg-white border border-slate-200 rounded-2xl py-10 text-center text-slate-500 text-xs sm:text-sm">
           <FaSpinner className="animate-spin inline mr-2" />
           Loading DOC tracking data...
         </div>
       ) : visibleAgents.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-2xl py-12 text-center px-4">
-          <p className="text-slate-500 text-sm font-medium">
-            No DOC supply records found for your assigned upazila agents.
-          </p>
-          <p className="text-xs text-slate-400 mt-1">
-            Make sure agents are added in "DOC Agents" with matching DOC.ID and
-            Excel file is imported.
+          <p className="text-slate-600 text-sm sm:text-base font-bold">
+            {fromDate || toDate || monthFilter
+              ? "No DOC on this date"
+              : "No DOC supply records found for the selected filter."}
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3.5">
           {visibleAgents.map((agent) => {
             const agentSupplies = filteredSupplies.filter(
               (s) => s.doc_id === agent.doc_id
             );
 
-            // Group this agent's supplies by PCD (e.g., SH, AA)
-            const agentPcds = Array.from(
+            const agentDocTypes = Array.from(
               new Set(agentSupplies.map((s) => s.pcd))
             );
 
@@ -1036,129 +1324,118 @@ function handleExportExcel() {
                 key={agent.id}
                 className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden"
               >
-                {/* AGENT CARD HEADER */}
-                <div className="bg-slate-800 text-white px-4 py-3 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <span className="px-2.5 py-1 rounded-lg bg-emerald-500 text-white font-bold text-xs">
-                      DOC.ID: {agent.doc_id}
-                    </span>
-                    <div>
-                      <h2 className="font-bold text-sm sm:text-base leading-tight">
-                        {agent.agent_name}
-                      </h2>
-                      <p className="text-[11px] text-slate-300">
-                        {agent.upazila}, {agent.district}
-                        {agent.mobile ? ` • ${agent.mobile}` : ""}
-                      </p>
-                    </div>
-                  </div>
+                {/* LIGHT ASH / GRAY CARD HEADER (Only DOC.ID & Agent Name) */}
+                <div className="bg-slate-100 border-b border-slate-200 px-4 py-2.5 flex items-center gap-2.5">
+                  <span className="px-2.5 py-0.5 rounded-md bg-slate-200/80 border border-slate-300 text-slate-800 font-bold text-xs">
+                    {agent.doc_id}
+                  </span>
+                  <h2 className="font-bold text-slate-800 text-sm sm:text-base truncate">
+                    {agent.agent_name}
+                  </h2>
                 </div>
 
-                {/* PCD-WISE SECTIONS INSIDE AGENT CARD */}
+                {/* DOC TYPE SECTIONS INSIDE AGENT CARD */}
                 <div className="p-3 sm:p-4 space-y-4 divide-y divide-slate-100">
-                  {agentPcds.map((pcdType) => {
-                    const pcdSupplyRows = agentSupplies.filter(
-                      (s) => s.pcd === pcdType
+                  {agentDocTypes.map((docType) => {
+                    const typeSupplyRows = agentSupplies.filter(
+                      (s) => s.pcd === docType
                     );
 
-                    const pcdTotalQty = pcdSupplyRows.reduce(
+                    const typeTotalQty = typeSupplyRows.reduce(
                       (sum, r) => sum + (Number(r.qty) || 0),
                       0
                     );
 
-                    // Trackings for this Agent + PCD + Date filter
-                    const pcdTrackRows = filteredTrackings.filter(
-                      (t) => t.doc_id === agent.doc_id && t.pcd === pcdType
+                    const typeTrackRows = filteredTrackings.filter(
+                      (t) => t.doc_id === agent.doc_id && t.pcd === docType
                     );
 
-                    const pcdTrackedQty = pcdTrackRows.reduce(
+                    const typeTrackedQty = typeTrackRows.reduce(
                       (sum, r) => sum + (Number(r.qty) || 0),
                       0
                     );
 
-                    const pcdUntrackedQty = Math.max(
+                    const typeUntrackedQty = Math.max(
                       0,
-                      pcdTotalQty - pcdTrackedQty
+                      typeTotalQty - typeTrackedQty
                     );
 
-                    const pcdTrackedPct =
-                      pcdTotalQty > 0
-                        ? ((pcdTrackedQty / pcdTotalQty) * 100).toFixed(1)
+                    const typeTrackedPct =
+                      typeTotalQty > 0
+                        ? ((typeTrackedQty / typeTotalQty) * 100).toFixed(1)
                         : "0.0";
-                    const pcdUntrackedPct =
-                      pcdTotalQty > 0
-                        ? ((pcdUntrackedQty / pcdTotalQty) * 100).toFixed(1)
+                    const typeUntrackedPct =
+                      typeTotalQty > 0
+                        ? ((typeUntrackedQty / typeTotalQty) * 100).toFixed(1)
                         : "0.0";
 
                     const primaryDate =
-                      pcdSupplyRows[0]?.h_date || selectedDate || todayStr;
+                      typeSupplyRows[0]?.h_date || fromDate || todayStr;
 
                     return (
-                      <div key={pcdType} className="pt-3 first:pt-0 space-y-3">
-                        {/* PCD Badge & Add Tracking Button */}
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <span className="px-2.5 py-1 rounded-lg bg-indigo-100 text-indigo-800 font-bold text-xs">
-                              DOC Type (PCD): {pcdType}
-                            </span>
-                          </div>
+                      <div key={docType} className="pt-3 first:pt-0 space-y-2.5">
+                        {/* DOC Type Label & Add Tracking Button */}
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs">
+                            DOC Type: {docType}
+                          </span>
 
                           <button
                             onClick={() =>
                               openAddTrackingModal({
                                 doc_id: agent.doc_id,
                                 agent_name: agent.agent_name,
-                                pcd: pcdType,
+                                pcd: docType,
                                 h_date: primaryDate,
-                                supply_id: pcdSupplyRows[0]?.id,
-                                remainingQty: pcdUntrackedQty,
+                                supply_id: typeSupplyRows[0]?.id,
+                                remainingQty: typeUntrackedQty,
                               })
                             }
-                            className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-semibold shadow-sm transition"
+                            className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition"
                           >
                             <FaPlus size={10} />
                             Add Tracking
                           </button>
                         </div>
 
-                        {/* SUPPLY TABLE (H.Date, PCD, AG/B+, Qty, B.Qty) */}
+                        {/* SUPPLY TABLE (H.Date, DOC Type, AG/B+, Qty, B.Qty) */}
                         <div className="overflow-x-auto border border-slate-200 rounded-xl">
-                          <table className="min-w-full text-xs sm:text-sm">
+                          <table className="min-w-full text-xs">
                             <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
                               <tr>
-                                <th className="px-3 py-2 text-left font-semibold">
+                                <th className="px-3 py-1.5 text-left font-semibold">
                                   H.Date
                                 </th>
-                                <th className="px-3 py-2 text-left font-semibold">
-                                  PCD
+                                <th className="px-3 py-1.5 text-left font-semibold">
+                                  DOC Type
                                 </th>
-                                <th className="px-3 py-2 text-left font-semibold">
+                                <th className="px-3 py-1.5 text-left font-semibold">
                                   AG/B+
                                 </th>
-                                <th className="px-3 py-2 text-right font-semibold">
+                                <th className="px-3 py-1.5 text-right font-semibold">
                                   Qty
                                 </th>
-                                <th className="px-3 py-2 text-right font-semibold">
+                                <th className="px-3 py-1.5 text-right font-semibold">
                                   B.Qty
                                 </th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                              {pcdSupplyRows.map((row) => (
+                              {typeSupplyRows.map((row) => (
                                 <tr key={row.id} className="hover:bg-slate-50">
-                                  <td className="px-3 py-2 font-medium text-slate-800">
+                                  <td className="px-3 py-1.5 font-medium text-slate-800">
                                     {row.h_date}
                                   </td>
-                                  <td className="px-3 py-2 font-bold text-indigo-700">
+                                  <td className="px-3 py-1.5 font-bold text-slate-700">
                                     {row.pcd}
                                   </td>
-                                  <td className="px-3 py-2 text-slate-600">
+                                  <td className="px-3 py-1.5 text-slate-600">
                                     {row.ag_b || "-"}
                                   </td>
-                                  <td className="px-3 py-2 text-right font-bold text-slate-800">
+                                  <td className="px-3 py-1.5 text-right font-bold text-slate-800">
                                     {Number(row.qty).toLocaleString()}
                                   </td>
-                                  <td className="px-3 py-2 text-right text-slate-600">
+                                  <td className="px-3 py-1.5 text-right text-slate-600">
                                     {Number(row.b_qty).toLocaleString()}
                                   </td>
                                 </tr>
@@ -1167,12 +1444,9 @@ function handleExportExcel() {
                           </table>
                         </div>
 
-                        {/* TRACKED FARMERS LIST UNDER THIS PCD */}
-                        {pcdTrackRows.length > 0 && (
-                          <div className="bg-emerald-50/50 border border-emerald-200 rounded-xl p-2.5 space-y-2">
-                            <p className="text-[11px] font-bold text-emerald-800 uppercase">
-                              Assigned Farmers ({pcdType})
-                            </p>
+                        {/* TRACKED FARMERS LIST (Includes "Tracked By" Column) */}
+                        {typeTrackRows.length > 0 && (
+                          <div className="bg-emerald-50/40 border border-emerald-200 rounded-xl p-2 space-y-1.5">
                             <div className="overflow-x-auto">
                               <table className="min-w-full text-xs">
                                 <thead className="border-b border-emerald-200 text-emerald-900">
@@ -1193,13 +1467,16 @@ function handleExportExcel() {
                                       Feed Company
                                     </th>
                                     <th className="py-1.5 px-2 text-left">
+                                      Tracked By
+                                    </th>
+                                    <th className="py-1.5 px-2 text-left">
                                       Remark
                                     </th>
                                     <th className="py-1.5 px-2 text-right"></th>
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-emerald-100">
-                                  {pcdTrackRows.map((tr) => (
+                                  {typeTrackRows.map((tr) => (
                                     <tr key={tr.id}>
                                       <td className="py-1.5 px-2 font-semibold text-slate-800">
                                         {tr.farmer_name}
@@ -1217,6 +1494,9 @@ function handleExportExcel() {
                                         <span className="px-2 py-0.5 rounded bg-white border border-emerald-300 text-emerald-800 font-semibold">
                                           {tr.feed_company}
                                         </span>
+                                      </td>
+                                      <td className="py-1.5 px-2 font-medium text-slate-700">
+                                        {tr.tracked_by_name || "-"}
                                       </td>
                                       <td className="py-1.5 px-2 text-slate-600">
                                         {tr.remark || "-"}
@@ -1240,21 +1520,21 @@ function handleExportExcel() {
                           </div>
                         )}
 
-                        {/* COMPACT FOOTER SUMMARY FOR THIS PCD */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs">
+                        {/* COMPACT FOOTER SUMMARY FOR THIS DOC TYPE */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs">
                           <span className="font-medium text-slate-700">
-                            <strong>{pcdType}</strong> Total:{" "}
-                            <strong>{pcdTotalQty.toLocaleString()}</strong>
+                            <strong>{docType}</strong> Total:{" "}
+                            <strong>{typeTotalQty.toLocaleString()}</strong>
                           </span>
 
                           <div className="flex flex-wrap items-center gap-3">
                             <span className="text-emerald-700 font-semibold">
-                              Tracked: {pcdTrackedQty.toLocaleString()} (
-                              {pcdTrackedPct}%)
+                              Tracked: {typeTrackedQty.toLocaleString()} (
+                              {typeTrackedPct}%)
                             </span>
                             <span className="text-amber-700 font-semibold">
-                              Untracked: {pcdUntrackedQty.toLocaleString()} (
-                              {pcdUntrackedPct}%)
+                              Untracked: {typeUntrackedQty.toLocaleString()} (
+                              {typeUntrackedPct}%)
                             </span>
                           </div>
                         </div>
@@ -1274,19 +1554,19 @@ function handleExportExcel() {
       {isTrackModalOpen && activeTarget && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-md max-h-[92vh] flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 bg-slate-100">
               <div>
-                <h3 className="text-base font-bold text-slate-800">
-                  Add DOC Tracking ({activeTarget.pcd})
+                <h3 className="text-sm sm:text-base font-bold text-slate-800">
+                  Add Tracking — DOC Type: {activeTarget.pcd}
                 </h3>
-                <p className="text-xs text-slate-500">
-                  {activeTarget.agent_name} (ID: {activeTarget.doc_id}) •
-                  Untracked: {activeTarget.remainingQty}
+                <p className="text-xs text-slate-600">
+                  {activeTarget.doc_id} • {activeTarget.agent_name} (Remaining:{" "}
+                  <strong>{activeTarget.remainingQty}</strong>)
                 </p>
               </div>
               <button
                 onClick={() => setIsTrackModalOpen(false)}
-                className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-500"
+                className="w-8 h-8 rounded-lg hover:bg-slate-200 flex items-center justify-center text-slate-500"
               >
                 <FaTimes />
               </button>
@@ -1423,26 +1703,120 @@ function handleExportExcel() {
       )}
 
       {/* ==================================================
-          MODAL 2: TRACKED REPORT POPUP
+          MODAL 2: EXPORT EXCEL (Multi-Select DOC Type)
+      ================================================== */}
+      {isExportModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-100">
+              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <FaFileExcel className="text-emerald-600" />
+                Select DOC Types to Export
+              </h3>
+              <button
+                onClick={() => setIsExportModalOpen(false)}
+                className="w-7 h-7 rounded-lg hover:bg-slate-200 flex items-center justify-center text-slate-500"
+              >
+                <FaTimes size={13} />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-500">
+                  Date: <strong>{dateRangeLabel}</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExportSelectedTypes(
+                      exportSelectedTypes.length === allPcdTypes.length
+                        ? []
+                        : [...allPcdTypes]
+                    )
+                  }
+                  className="text-emerald-600 font-semibold hover:underline"
+                >
+                  {exportSelectedTypes.length === allPcdTypes.length
+                    ? "Deselect All"
+                    : "Select All"}
+                </button>
+              </div>
+
+              <div className="border border-slate-200 rounded-xl max-h-48 overflow-y-auto p-2 space-y-1 bg-slate-50">
+                {allPcdTypes.length === 0 ? (
+                  <p className="text-xs text-slate-400 text-center py-3">
+                    No DOC Types available.
+                  </p>
+                ) : (
+                  allPcdTypes.map((type) => {
+                    const checked = exportSelectedTypes.includes(type);
+                    return (
+                      <label
+                        key={type}
+                        className={`flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer text-xs font-medium transition ${
+                          checked
+                            ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                            : "hover:bg-white text-slate-700"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleExportDocType(type)}
+                          className="w-4 h-4 rounded text-emerald-600"
+                        />
+                        <span>DOC Type: {type}</span>
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsExportModalOpen(false)}
+                  className="flex-1 py-2 rounded-xl border border-slate-300 text-slate-600 text-xs font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportExcel}
+                  disabled={exportSelectedTypes.length === 0}
+                  className="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-semibold flex items-center justify-center gap-1.5"
+                >
+                  <FaFileExcel />
+                  Export ({exportSelectedTypes.length})
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================
+          MODAL 3: TRACKED REPORT POPUP
       ================================================== */}
       {isReportOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden">
-            {/* Report Header */}
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 bg-slate-800 text-white">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 bg-slate-100">
               <div className="flex items-center gap-2">
-                <FaChartPie className="text-amber-400" />
-                <h3 className="text-base font-bold">DOC Tracked Report</h3>
+                <FaChartPie className="text-amber-500" />
+                <h3 className="text-base font-bold text-slate-800">
+                  DOC Tracked Report
+                </h3>
               </div>
               <button
                 onClick={() => setIsReportOpen(false)}
-                className="w-8 h-8 rounded-lg hover:bg-slate-700 flex items-center justify-center text-slate-300"
+                className="w-8 h-8 rounded-lg hover:bg-slate-200 flex items-center justify-center text-slate-500"
               >
                 <FaTimes />
               </button>
             </div>
 
-            {/* Report Body */}
             <div className="p-4 sm:p-5 space-y-4 overflow-y-auto">
               {/* Date Range & DOC Type Filter */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
@@ -1472,7 +1846,7 @@ function handleExportExcel() {
 
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-500 mb-1">
-                    DOC Type (PCD)
+                    DOC Type
                   </label>
                   <select
                     value={reportPcdFilter}
@@ -1513,7 +1887,7 @@ function handleExportExcel() {
                 </div>
               </div>
 
-              {/* Section 1: Feed Company Breakdown */}
+              {/* Feed Company Wise Breakdown */}
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
                   Feed Company Wise Tracked Report
@@ -1558,17 +1932,17 @@ function handleExportExcel() {
                 </div>
               </div>
 
-              {/* Section 2: DOC Type (PCD) Breakdown */}
+              {/* DOC Type Wise Summary */}
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-                  DOC Type (PCD) Wise Summary
+                  DOC Type Wise Summary
                 </h4>
                 <div className="border border-slate-200 rounded-xl overflow-hidden">
                   <table className="min-w-full text-xs sm:text-sm">
                     <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
                       <tr>
                         <th className="px-3.5 py-2 text-left font-semibold">
-                          DOC Type (PCD)
+                          DOC Type
                         </th>
                         <th className="px-3.5 py-2 text-right font-semibold">
                           Total DOC
@@ -1584,7 +1958,7 @@ function handleExportExcel() {
                     <tbody className="divide-y divide-slate-100">
                       {pcdBreakdown.map((p) => (
                         <tr key={p.pcd} className="hover:bg-slate-50">
-                          <td className="px-3.5 py-2 font-bold text-indigo-700">
+                          <td className="px-3.5 py-2 font-bold text-slate-800">
                             {p.pcd}
                           </td>
                           <td className="px-3.5 py-2 text-right font-semibold">
@@ -1604,7 +1978,6 @@ function handleExportExcel() {
               </div>
             </div>
 
-            {/* Report Footer */}
             <div className="px-5 py-3 border-t border-slate-200 bg-slate-50 flex justify-end">
               <button
                 onClick={() => setIsReportOpen(false)}
