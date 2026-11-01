@@ -79,19 +79,15 @@ const from =
 
           <div className="text-6xl mb-3">
             <img
-            src="/logo.png"
-            alt="FAMS"
+            src="/logo smart team.png"
+            alt="Smart Team"
             className="w-28 h-28 mx-auto mb-4"
           />
           </div>
 
           <h1 className="text-3xl font-bold text-slate-800">
-            Farm & Agent
+            Welcome
           </h1>
-
-          <h2 className="text-2xl font-bold text-emerald-600 mb-2">
-            Management System
-          </h2>
 
           
 
@@ -143,7 +139,7 @@ const from =
         <div className="mt-8 text-center">
 
           <p className="text-xs text-slate-500">
-            © 2026 Farm & Agent Management System
+            © 2026 Nourish Smart Team
           </p>
 
         </div>

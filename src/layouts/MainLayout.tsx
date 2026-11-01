@@ -11,15 +11,14 @@ export default function MainLayout() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-green-100">
-        <div className="w-full max-w-md text-center">
+          <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-white to-amber-100">        <div className="w-full max-w-md text-center">
           <img
-            src="/logo.png"
-            alt="FAMS"
-            className="w-28 h-28 mx-auto mb-4"
+            src="/logo smart team.png"
+            alt="Smart Team"
+            className="w-28 mx-auto mb-4"
           />
           <p className="mt-3 text-gray-600 text-lg">
-            Farm & Agent Management System
+            Nourish Smart Team
           </p>
           <p className="mt-8 text-sm text-gray-500">
             Preparing your workspace...
@@ -27,7 +26,7 @@ export default function MainLayout() {
           <div className="mt-5 h-2 rounded-full bg-gray-200 overflow-hidden">
             <div className="h-full w-1/2 bg-emerald-600 animate-pulse rounded-full" />
           </div>
-          <p className="mt-8 text-xs text-gray-400">Version 1.0</p>
+          
         </div>
       </div>
     );
