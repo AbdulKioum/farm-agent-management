@@ -11,136 +11,84 @@ export async function getCompanies() {
   return data;
 }
 
-export async function createCompany(
-  company: any
-) {
-
+export async function createCompany(company: any) {
   let logoUrl = null;
 
   if (company.logo) {
+    const fileName = `${Date.now()}-${company.logo.name}`;
 
-    const fileName =
-      `${Date.now()}-${company.logo.name}`;
-
-    const { error: uploadError } =
-      await supabase.storage
-        .from("company-logos")
-        .upload(
-          fileName,
-          company.logo
-        );
-
-    if (uploadError)
-      throw uploadError;
-
-    const {
-      data: publicUrlData,
-    } = supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from("company-logos")
-      .getPublicUrl(
-        fileName
-      );
+      .upload(fileName, company.logo);
 
-    logoUrl =
-      publicUrlData.publicUrl;
+    if (uploadError) throw uploadError;
+
+    const { data: publicUrlData } = supabase.storage
+      .from("company-logos")
+      .getPublicUrl(fileName);
+
+    logoUrl = publicUrlData.publicUrl;
   }
 
-  const { data, error } =
-    await supabase
-      .from("companies")
-      .insert([
-        {
-          company_name:
-            company.company_name,
+  const { data, error } = await supabase
+    .from("companies")
+    .insert([
+      {
+        company_name: company.company_name,
+        phone: company.phone || "",
+        email: company.email || "",
+        website: company.website,
+        address: company.address,
+        status: company.status,
+        logo_url: logoUrl,
+      },
+    ])
+    .select();
 
-          website:
-            company.website,
-
-          address:
-            company.address,
-
-          status:
-            company.status,
-
-          logo_url:
-            logoUrl,
-        },
-      ])
-      .select();
-
-  if (error)
-    throw error;
+  if (error) throw error;
 
   return data;
 }
 
-export async function updateCompany(
-  id: number,
-  company: any
-) {
-
+export async function updateCompany(id: number, company: any) {
   let updateData: any = {
-    company_name:
-      company.company_name,
-
-    website:
-      company.website,
-
-    address:
-      company.address,
-
-    status:
-      company.status,
+    company_name: company.company_name,
+    phone: company.phone || "",
+    email: company.email || "",
+    website: company.website,
+    address: company.address,
+    status: company.status,
   };
 
   if (company.logo) {
+    const fileName = `${Date.now()}-${company.logo.name}`;
 
-    const fileName =
-      `${Date.now()}-${company.logo.name}`;
-
-    const { error: uploadError } =
-      await supabase.storage
-        .from("company-logos")
-        .upload(
-          fileName,
-          company.logo
-        );
-
-    if (uploadError)
-      throw uploadError;
-
-    const {
-      data: publicUrlData,
-    } = supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from("company-logos")
-      .getPublicUrl(
-        fileName
-      );
+      .upload(fileName, company.logo);
 
-    updateData.logo_url =
-      publicUrlData.publicUrl;
+    if (uploadError) throw uploadError;
+
+    const { data: publicUrlData } = supabase.storage
+      .from("company-logos")
+      .getPublicUrl(fileName);
+
+    updateData.logo_url = publicUrlData.publicUrl;
   }
 
-  const { data, error } =
-    await supabase
-      .from("companies")
-      .update(updateData)
-      .eq("id", id)
-      .select();
+  const { data, error } = await supabase
+    .from("companies")
+    .update(updateData)
+    .eq("id", id)
+    .select();
 
-  if (error)
-    throw error;
+  if (error) throw error;
 
   return data;
 }
 
-export async function deleteCompany(
-  id: number
-) {
-  const { error } = await supabase
-    .from("companies")
-    .delete()
-    .eq("id", id);
+export async function deleteCompany(id: number) {
+  const { error } = await supabase.from("companies").delete().eq("id", id);
 
   if (error) throw error;
 }

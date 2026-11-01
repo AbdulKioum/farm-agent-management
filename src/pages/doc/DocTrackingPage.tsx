@@ -13,13 +13,50 @@ import {
 } from "react-icons/fa";
 
 const FEED_COMPANIES = [
-  "Nourish",
-  "CP",
-  "Kazi",
   "Alal 71",
-  "Paragon",
-  "Amana",
+  "Aman",
   "Astha",
+  "Alma",
+  "Akij",
+  "Alo Feed",
+  "ACI Godrej",
+  "Adnan",
+  "Advance",
+  "Aftab",
+  "AG",
+  "Agata",
+  "Biswas",
+  "Care",
+  "Cherish",
+  "CP",
+  "Fresh",
+  "Haid",
+  "Haque",
+  "Index",
+  "Japfa",
+  "Kazi",
+  "KNB",
+  "Mars",
+  "Mega",
+  "Nahar",
+  "New Hope",
+  "Nourish",
+  "Paddma",
+  "Paragon",
+  "Planet",
+  "Provita",
+  "Pustiraj",
+  "Quality",
+  "RRP",
+  "Rupashi Bangla",
+  "S.B",
+  "SMS",
+  "Soguna",
+  "Sunney",
+  "Teer",
+  "Tongwei",
+  "Other"
+
 ];
 
 // ==================================================
@@ -1325,7 +1362,7 @@ export default function DocTrackingPage() {
                 className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden"
               >
                 {/* LIGHT ASH / GRAY CARD HEADER (Only DOC.ID & Agent Name) */}
-                <div className="bg-slate-100 border-b border-slate-200 px-4 py-2.5 flex items-center gap-2.5">
+                <div className="bg-slate-300 border-b border-slate-200 px-4 py-2.5 flex items-center gap-2.5">
                   <span className="px-2.5 py-0.5 rounded-md bg-slate-200/80 border border-slate-300 text-slate-800 font-bold text-xs">
                     {agent.doc_id}
                   </span>
